@@ -8,16 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		E5138B1619113B21004AC1C8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E5138B1419113B21004AC1C8 /* InfoPlist.strings */; };
-		E5138B1819113B21004AC1C8 /* MBIMProbe.c in Sources */ = {isa = PBXBuildFile; fileRef = E5138B1719113B21004AC1C8 /* MBIMProbe.c */; };
+		E5138B1819113B21004AC1C8 /* MBIMProbe.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E5138B1719113B21004AC1C8 /* MBIMProbe.cpp */; };
+		E58F6C631C5919A1005F2279 /* MSOSDescriptorV1.h in Headers */ = {isa = PBXBuildFile; fileRef = E58F6C621C5919A1005F2279 /* MSOSDescriptorV1.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		E5138B0C19113B21004AC1C8 /* MBIMProbe.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MBIMProbe.kext; sourceTree = BUILT_PRODUCTS_DIR; };
-		E5138B1019113B21004AC1C8 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
 		E5138B1319113B21004AC1C8 /* MBIMProbe-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MBIMProbe-Info.plist"; sourceTree = "<group>"; };
 		E5138B1519113B21004AC1C8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		E5138B1719113B21004AC1C8 /* MBIMProbe.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MBIMProbe.c; sourceTree = "<group>"; };
+		E5138B1719113B21004AC1C8 /* MBIMProbe.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = MBIMProbe.cpp; sourceTree = "<group>"; };
 		E5138B1919113B21004AC1C8 /* MBIMProbe-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MBIMProbe-Prefix.pch"; sourceTree = "<group>"; };
+		E5138B1F19113B93004AC1C8 /* MBIMProbe.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MBIMProbe.h; sourceTree = "<group>"; };
+		E58F6C621C5919A1005F2279 /* MSOSDescriptorV1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSOSDescriptorV1.h; sourceTree = "<group>"; };
+		E58F6C641C591C3F005F2279 /* MSOSDescriptorV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MSOSDescriptorV2.h; sourceTree = "<group>"; };
+		E5E4756D1C57B531006FF47C /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
+		E5E475701C57C205006FF47C /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,23 +56,19 @@
 		E5138B0E19113B21004AC1C8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E5138B0F19113B21004AC1C8 /* Other Frameworks */,
+				E5E475701C57C205006FF47C /* IOKit.framework */,
+				E5E4756D1C57B531006FF47C /* Kernel.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		E5138B0F19113B21004AC1C8 /* Other Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				E5138B1019113B21004AC1C8 /* Kernel.framework */,
-			);
-			name = "Other Frameworks";
 			sourceTree = "<group>";
 		};
 		E5138B1119113B21004AC1C8 /* MBIMProbe */ = {
 			isa = PBXGroup;
 			children = (
-				E5138B1719113B21004AC1C8 /* MBIMProbe.c */,
+				E5138B1719113B21004AC1C8 /* MBIMProbe.cpp */,
+				E5138B1F19113B93004AC1C8 /* MBIMProbe.h */,
+				E58F6C621C5919A1005F2279 /* MSOSDescriptorV1.h */,
+				E58F6C641C591C3F005F2279 /* MSOSDescriptorV2.h */,
 				E5138B1219113B21004AC1C8 /* Supporting Files */,
 			);
 			path = MBIMProbe;
@@ -90,6 +91,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E58F6C631C5919A1005F2279 /* MSOSDescriptorV1.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,8 +123,13 @@
 		E5138B0219113B21004AC1C8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0500;
+				LastUpgradeCheck = 0720;
 				ORGANIZATIONNAME = "Răzvan Corneliu C.R. VILT";
+				TargetAttributes = {
+					E5138B0B19113B21004AC1C8 = {
+						DevelopmentTeam = ABHRAMQ28G;
+					};
+				};
 			};
 			buildConfigurationList = E5138B0519113B21004AC1C8 /* Build configuration list for PBXProject "MBIMProbe" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -167,7 +174,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E5138B1819113B21004AC1C8 /* MBIMProbe.c in Sources */,
+				E5138B1819113B21004AC1C8 /* MBIMProbe.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -188,84 +195,45 @@
 		E5138B1A19113B21004AC1C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				INSTALL_GROUP = wheel;
+				INSTALL_OWNER = root;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
 		E5138B1B19113B21004AC1C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
-				SDKROOT = macosx;
+				INSTALL_GROUP = wheel;
+				INSTALL_OWNER = root;
 			};
 			name = Release;
 		};
 		E5138B1D19113B21004AC1C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Developer ID";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MBIMProbe/MBIMProbe-Prefix.pch";
 				INFOPLIST_FILE = "MBIMProbe/MBIMProbe-Info.plist";
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
-				MODULE_START = MBIMProbe_start;
-				MODULE_STOP = MBIMProbe_stop;
 				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
@@ -273,16 +241,17 @@
 		E5138B1E19113B21004AC1C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Developer ID";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MBIMProbe/MBIMProbe-Prefix.pch";
 				INFOPLIST_FILE = "MBIMProbe/MBIMProbe-Info.plist";
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
-				MODULE_START = MBIMProbe_start;
-				MODULE_STOP = MBIMProbe_stop;
 				MODULE_VERSION = 1.0.0d1;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;
@@ -306,6 +275,7 @@
 				E5138B1E19113B21004AC1C8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
