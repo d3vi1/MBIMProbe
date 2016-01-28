@@ -60,15 +60,6 @@
  
  */
 
-#define    MS_OS_REG_RESERVED            = 0,
-#define    MS_OS_REG_SZ                  = 1,
-#define    MS_OS_REG_EXPAND_SZ           = 2,
-#define    MS_OS_REG_BINARY              = 3,
-#define    MS_OS_REG_DWORD_LITTLE_ENDIAN = 4,
-#define    MS_OS_REG_DWORD_BIG_ENDIAN    = 5,
-#define    MS_OS_REG_LINK                = 6,
-#define    MS_OS_REG_MULTI_SZ            = 7
-
 // This won't work, but it's here for posterity.
 // PropertyName and PropertyData need to be voids
 // The defines above should also be part of an enum

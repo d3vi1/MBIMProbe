@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
-               BuildableName = "MBIMProbe.kext"
-               BlueprintName = "MBIMProbe"
+               BuildableName = "MBIMProbe-10.11.kext"
+               BlueprintName = "MBIMProbe-10.11"
                ReferencedContainer = "container:MBIMProbe.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,8 +46,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
-            BuildableName = "MBIMProbe.kext"
-            BlueprintName = "MBIMProbe"
+            BuildableName = "MBIMProbe-10.11.kext"
+            BlueprintName = "MBIMProbe-10.11"
             ReferencedContainer = "container:MBIMProbe.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

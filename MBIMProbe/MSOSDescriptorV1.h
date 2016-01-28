@@ -15,10 +15,10 @@
  
  MSFT100 Descriptor Description:
  
-     bLength             1	0x12	    Length of the descriptor.
-     bDescriptorType     1	0x03	    Descriptor type. A value of 0x03 indicates a Microsoft OS string descriptor.
-     qwSignature        14	‘MSFT100’	Signature field.
-     bMS_VendorCode      1	0x??        Vendor Code.
+     bLength             1  0x12        Length of the descriptor.
+     bDescriptorType     1  0x03        Descriptor type. A value of 0x03 indicates a Microsoft OS string descriptor.
+     qwSignature        14 ‘MSFT100’    Signature field.
+     bMS_VendorCode      1  0x??        Vendor Code.
      bFlags	             1  0x02        Bit 1: ContainerID Support Bool. Bits 0,2–7: Reserved
  
  Vendor Code: Save it for later as it's needed for each MS Request. Works like a cookie.
@@ -27,9 +27,18 @@
               such as SD/CF Readers, Scanners, HID (keypad), Printer, Fax.
               Show the Multi Function Printer as a single device even if the HID and scanners
               are grouped together.
-              Container IDs are actually used with MSOSDescriptor V2.
+              Container IDs are actually used with MSOSDescriptor V2. Oddly enough, they
+              were introduced in MS OS Descriptor v2 and used in MS OS Descriptor v1. But
+              it's Microsoft, so no surprises.
  
 */
+
+//Unused
+#define MS_OS_10_REQUEST_GENRE               0x1
+//Compatible IDs
+#define MS_OS_10_REQUEST_EXTENDED_COMPATID   0x4
+//Icons, URLs, Registry Entries, Help Pages, etc.
+#define MS_OS_10_REQUEST_EXTENDED_PROPERTIES 0x5
 
 
 /*
@@ -43,19 +52,21 @@
  Bluetooth can only use BT11, BT12 and EDR as a subcompatible ID.
  The compatible ID Descriptor has a header and bCount x Sections.
  
+ Warning, this is network order padded ASCII. Always use the USBTOHLL()
+ endian conversion macro.
  */
 
-#define MS_OS_10_NULL_COMPATIBLE_ID    = 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_RNDIS_COMPATIBLE_ID   = 0x52 0x4E 0x44 0x49 0x53 0x00 0x00 0x00
-#define MS_OS_10_PTP_COMPATIBLE_ID     = 0x50 0x54 0x50 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_MTP_COMPATIBLE_ID     = 0x4D 0x54 0x50 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_XUSB20_COMPATIBLE_ID  = 0x58 0x55 0x53 0x42 0x32 0x30 0x00 0x00
-#define MS_OS_10_BLUTUTH_COMPATIBLE_ID = 0x42 0x4C 0x55 0x54 0x55 0x54 0x48 0x00
-#define MS_OS_10_WINUSB_COMPATIBLE_ID  = 0x57 0x49 0x4E 0x55 0x53 0x42 0x00 0x00
-#define MS_OS_10_NULL_SUBCOMPATIBLE_ID = 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_BT11_SUBCOMPATIBLE_ID = 0x31 0x31 0x00 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_BT12_SUBCOMPATIBLE_ID = 0x31 0x32 0x00 0x00 0x00 0x00 0x00 0x00
-#define MS_OS_10_EDR2_SUBCOMPATIBLE_ID = 0x45 0x44 0x52 0x00 0x00 0x00 0x00 0x00
+#define   MS_OS_10_NULL_COMPATIBLE_ID    0x0000000000000000
+#define   MS_OS_10_RNDIS_COMPATIBLE_ID   0x524E444953000000
+#define   MS_OS_10_PTP_COMPATIBLE_ID     0x5054500000000000
+#define   MS_OS_10_MTP_COMPATIBLE_ID     0x4D54500000000000
+#define   MS_OS_10_XUSB20_COMPATIBLE_ID  0x5855534232300000
+#define   MS_OS_10_BLUTUTH_COMPATIBLE_ID 0x424C555455544800
+#define   MS_OS_10_WINUSB_COMPATIBLE_ID  0x57494E5553420000
+#define   MS_OS_10_NULL_SUBCOMPATIBLE_ID 0x0000000000000000
+#define   MS_OS_10_BT11_SUBCOMPATIBLE_ID 0x3131000000000000
+#define   MS_OS_10_BT12_SUBCOMPATIBLE_ID 0x3132000000000000
+#define   MS_OS_10_EDR2_SUBCOMPATIBLE_ID 0x4544520000000000
 
 typedef struct {
     uint32_t  dwLength;
@@ -72,7 +83,6 @@ typedef struct {
     uint8_t   subCompatibleId[8];
     uint8_t   Reserved2[6];
 } MS_OS_10_EXTENDED_COMPAT_DESCRIPTOR_FUNCTION;
-
 
 /*
 
@@ -96,16 +106,16 @@ typedef struct {
  you use buffers and pointers to the data.
  
  */
-/*
-#define MS_OS_REG_RESERVED            0
-#define MS_OS_REG_SZ                  1
-#define MS_OS_REG_EXPAND_SZ           2
-#define MS_OS_REG_BINARY              3
-#define MS_OS_REG_DWORD_LITTLE_ENDIAN 4
-#define MS_OS_REG_DWORD_BIG_ENDIAN    5
-#define MS_OS_REG_LINK                6
-#define MS_OS_REG_MULTI_SZ            7
-*/
+
+#define   MS_OS_REG_RESERVED             0
+#define   MS_OS_REG_SZ                   1
+#define   MS_OS_REG_EXPAND_SZ            2
+#define   MS_OS_REG_BINARY               3
+#define   MS_OS_REG_DWORD_LITTLE_ENDIAN  4
+#define   MS_OS_REG_DWORD_BIG_ENDIAN     5
+#define   MS_OS_REG_LINK                 6
+#define   MS_OS_REG_MULTI_SZ             7
+
 typedef struct {
     uint32_t  dwLength;
     uint16_t  bcdVersion;

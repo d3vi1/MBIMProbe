@@ -4,6 +4,16 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>MBIMProbe-10.9 copy.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>MBIMProbe-11.11 copy.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>MBIMProbe.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -13,6 +23,16 @@
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>E5138B0B19113B21004AC1C8</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>E58F6C651C594720005F2279</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>E58F6C731C594739005F2279</key>
 		<dict>
 			<key>primary</key>
 			<true/>
