@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>HuaweiDataCardJUCDCNCM</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.huawei.driver.cdc_ncm</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>2.8.0</string>
+	<key>IOKitPersonalities</key>
+	<dict>
+		<key>CDCNCM</key>
+		<dict>
+			<key>CFBundleIdentifier</key>
+			<string>com.huawei.driver.cdc_ncm</string>
+			<key>IOClass</key>
+			<string>com_huawei_driver_cdc_ncm</string>
+			<key>IOProviderClass</key>
+			<string>com_huawei_driver_bus</string>
+			<key>IOUserClientClass</key>
+			<string>com_huawei_driver_cdc_user_client</string>
+			<key>jAltSetting</key>
+			<integer>1</integer>
+			<key>jCommSubclass</key>
+			<integer>3</integer>
+			<key>jIsNtb32</key>
+			<true/>
+		</dict>
+	</dict>
+	<key>OSBundleLibraries</key>
+	<dict>
+		<key>com.apple.iokit.IONetworkingFamily</key>
+		<string>1.0.0b1</string>
+		<key>com.apple.kpi.bsd</key>
+		<string>8.0.0</string>
+		<key>com.apple.kpi.iokit</key>
+		<string>8.0.0</string>
+		<key>com.apple.kpi.libkern</key>
+		<string>8.0.0</string>
+		<key>com.huawei.driver.cdc_usb_bus</key>
+		<string>1.1.0</string>
+		<key>com.huawei.driver.dc_net</key>
+		<string>1.1.0</string>
+	</dict>
+</dict>
+</plist>

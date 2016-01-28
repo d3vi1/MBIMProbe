@@ -3,7 +3,7 @@
 //  MBIMProbe
 //
 //  Created by Răzvan Corneliu C.R. VILT on 30.04.2014.
-//  Copyright (c) 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
+//  Copyright © 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
 //
 
 #ifndef _MBIMProbe_h
@@ -26,15 +26,15 @@ class MBIMProbe : public IOService
     OSDeclareDefaultStructors(MBIMProbe)
 
 private:
-    virtual bool        MergeDictionaryIntoProvider(IOService *  provider, OSDictionary *  mergeDict);
+    virtual bool        MergeDictionaryIntoProvider  (IOService *  provider, OSDictionary *  mergeDict);
     virtual bool        MergeDictionaryIntoDictionary(OSDictionary *  sourceDictionary,  OSDictionary *  targetDictionary);
-    virtual bool        selectMbimConfiguration(IOUSBHostDevice	*device);
-    virtual IOReturn    checkMsOsDescriptor(IOUSBHostDevice *device);
-    virtual IOReturn    getMsDescriptor(IOUSBHostDevice *device, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
-    virtual IOReturn    getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceNumber, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
-    virtual IOReturn    huaweiMode1(IOUSBHostInterface *interface);
-    virtual IOReturn    huaweiMode2(IOUSBHostInterface *interface);
-    virtual IOReturn    ejectCD(IOUSBHostInterface *interface);
+    virtual bool        searchMbimConfiguration      (IOUSBHostDevice *device);
+    virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device);
+    virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
+    virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device, uint16_t interfaceNumber, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
+    virtual IOReturn    huaweiMode1                  (IOUSBHostInterface *interface);
+    virtual IOReturn    huaweiMode2                  (IOUSBHostInterface *interface);
+    virtual IOReturn    ejectCD                      (IOUSBHostInterface *interface);
     virtual IOReturn    haveCDCinterfaces();
     virtual IOReturn    haveRNDISInterfaces();
 public:

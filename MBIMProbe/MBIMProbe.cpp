@@ -3,7 +3,7 @@
 //  MBIMProbe
 //
 //  Created by Răzvan Corneliu C.R. VILT on 30.04.2014.
-//  Copyright (c) 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
+//  Copyright © 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
 //
 
 
@@ -35,6 +35,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     IOLog("MS Compatible Descriptor: Null Compatible ID\n");
                     break;
                 case MS_OS_10_RNDIS_COMPATIBLE_ID:
+                    //Let's also look for something else before we
+                    //PublishRNDISConfiguration(device);
                     IOLog("MS Compatible Descriptor: RNDIS\n");
                     break;
                 case MS_OS_10_MTP_COMPATIBLE_ID:
@@ -48,6 +50,27 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     break;
                 case MS_OS_10_XUSB20_COMPATIBLE_ID:
                     IOLog("MS Compatible Descriptor: X USB 2.0\n");
+                    break;
+                case MS_OS_10_ALTRCFG_COMPATIBLE_ID:
+                    IOLog("MS Compatible Descriptor: MBIM");
+                    switch (USBToHost64(*((uint64_t*)dataBuffer+18))){
+                        case MS_OS_10_ALT2_SUBCOMPATIBLE_ID:
+                        case MS_OS_10_ALT3_SUBCOMPATIBLE_ID:
+                        case MS_OS_10_ALT4_SUBCOMPATIBLE_ID:
+                            IOLog("\n");
+                            //WARNING: We've found a fragile MBIM configuration.
+                            //TODO: If El Capitan: Switch to the Windows 8
+                            //      configuration now and afterwards publish
+                            //      the MBIM configuration.
+                            //      If Yosemite or older, switch to the AT
+                            //      option.
+                            //PublishMBIMConfiguration(device);
+                            device->close(this);
+                            break;
+                        default:
+                            IOLog(" incorrect Subcompatible descriptor\n");
+                            break;
+                    }
                     break;
                 case MS_OS_10_BLUTUTH_COMPATIBLE_ID:
                     IOLog("Bluetooth");
@@ -76,8 +99,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             
         }
         
-
-        if(selectMbimConfiguration(device)==kIOReturnSuccess){
+        //It means that it still might be MBIM, but not
+        //with the ALTCFG config descriptor defined
+        //in Windows 8.
+        if(searchMbimConfiguration(device)==kIOReturnSuccess){
             //PublishMBIMConfiguration(device);
             
             device->close(this);
@@ -122,16 +147,24 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     const StringDescriptor                *msftString;
     
     msftString = device->getStringDescriptor(0xEE,0x0);
+    uint64_t *highBytesString       = (uint64_t*)(void*)&msftString;
+    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+4);
+    uint16_t *lowBytesString        = (uint16_t*)(void*)(&msftString+4);
     
     const char    msftRefString[8]     =  "MSFT100";
     const wchar_t msftRefWideString[8] = L"MSFT100";
+    uint64_t *highBytesRefString       = (uint64_t*)(void*)&msftRefString;
+    uint32_t *medBytesRefString        = (uint32_t*)(void*)(&msftRefString+4);
+    uint16_t *lowBytesRefString        = (uint16_t*)(void*)(&msftRefString+4);
     
     // Let's see if we have MSFT100 in narrow
     // We should also compare in wide using msftRefStringUnicode
     if (msftString != NULL && msftString->bLength > StandardUSB::kDescriptorSize){
 
-        //TODO: Add two comparisons one in narrow and one in wide.
-        //You can compare with msftRefString and msftRefWideString.
+        //We should compare only the first 14 bytes. The last double byte
+        //is the bRequest value + ContainerID and can be different.
+        //Comparing two uint128_t would have been much more elegant.
+        if((*highBytesRefString==*highBytesString)&&(*medBytesRefString==*medBytesString)&&(lowBytesRefString==lowBytesString))
         return kIOReturnSuccess;
     }
     
@@ -191,6 +224,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint16_t Desc
                     return kIOReturnSuccess;
                 } else {
                     /* This was my first attempt at buffered transfers
+                     * I am keeping it until we test.
                      uint16_t   numPages = 0;
 
                     if (header->dwLength % 0x1000){
@@ -366,7 +400,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceN
     } else return kIOReturnNotFound;//Cookie not found
 }
 
-bool MBIMProbe::selectMbimConfiguration(IOUSBHostDevice	*device){
+bool MBIMProbe::searchMbimConfiguration(IOUSBHostDevice *device){
 
     uint8_t                          numConfigs          = device->getDeviceDescriptor()->bNumConfigurations;
     const ConfigurationDescriptor	*configDescriptor    = device->getConfigurationDescriptor();		// configuration descriptor

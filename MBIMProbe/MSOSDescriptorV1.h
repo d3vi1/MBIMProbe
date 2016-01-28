@@ -45,11 +45,17 @@
  
  Microsoft Compatible ID Descriptor
  
- Values are: RNDIS, PTP, MTP, Xusb20, Bluetooth, Winusb
-             Subvalues are only for Bluetooth
+ Values are: RNDIS, PTP, MTP, Xusb20, Bluetooth, Winusb, ALTRCFG
+             Subvalues are only for Bluetooth and MBIM/ALTRCFG
  
- Except bluetooth all compatible IDs use NULL as a subcompatible ID.
+ Except bluetooth and Alternate all compatible IDs use NULL as a
+ subcompatible ID.
+ 
  Bluetooth can only use BT11, BT12 and EDR as a subcompatible ID.
+ 
+ Altrcfg can only use ALT2, ALT3 and ALT4 as a subcompatible ID,
+ thus indicating that it's an MBIM device.
+
  The compatible ID Descriptor has a header and bCount x Sections.
  
  Warning, this is network order padded ASCII. Always use the USBTOHLL()
@@ -63,10 +69,14 @@
 #define   MS_OS_10_XUSB20_COMPATIBLE_ID  0x5855534232300000
 #define   MS_OS_10_BLUTUTH_COMPATIBLE_ID 0x424C555455544800
 #define   MS_OS_10_WINUSB_COMPATIBLE_ID  0x57494E5553420000
+#define   MS_OS_10_ALTRCFG_COMPATIBLE_ID 0x414C545243464700
 #define   MS_OS_10_NULL_SUBCOMPATIBLE_ID 0x0000000000000000
 #define   MS_OS_10_BT11_SUBCOMPATIBLE_ID 0x3131000000000000
 #define   MS_OS_10_BT12_SUBCOMPATIBLE_ID 0x3132000000000000
 #define   MS_OS_10_EDR2_SUBCOMPATIBLE_ID 0x4544520000000000
+#define   MS_OS_10_ALT2_SUBCOMPATIBLE_ID 0x3200000000000000
+#define   MS_OS_10_ALT3_SUBCOMPATIBLE_ID 0x3300000000000000
+#define   MS_OS_10_ALT4_SUBCOMPATIBLE_ID 0x3400000000000000
 
 typedef struct {
     uint32_t  dwLength;
