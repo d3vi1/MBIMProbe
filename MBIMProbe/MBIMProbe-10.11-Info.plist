@@ -24,6 +24,21 @@
 	<string>1</string>
 	<key>IOKitPersonalities</key>
 	<dict>
+		<key>Huawei ANY</key>
+		<dict>
+			<key>CFBundleIdentifier</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>IOClass</key>
+			<string>$(PROJECT_NAME)</string>
+			<key>IOProviderClass</key>
+			<string>IOUSBHostDevice</string>
+			<key>bcdDevice</key>
+			<string>*</string>
+			<key>idProduct</key>
+			<string>*</string>
+			<key>idVendor</key>
+			<string>4817</string>
+		</dict>
 		<key>MBIM IAD Selection</key>
 		<dict>
 			<key>CFBundleIdentifier</key>

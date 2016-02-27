@@ -23,8 +23,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
     IOReturn                status;
     
-    if (device && usbPlane)
-    {
+    if (device && usbPlane) {
+        
         //Get exclusive access to the USB device
         device->open(this);
         
@@ -32,10 +32,11 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         IOLog("We have the USB device exclusively. Now checking for the MSFT100 descriptor");
         IOSleep(10000);
         
+        /* 
+         * PRE:  There is a MSFT100 descriptor on device.
+         * POST: Device is microsoft. Handle as MS device.
+         */
         if (checkMsOsDescriptor(device)==kIOReturnSuccess){
-            /* PRE: There is a MSFT100 descriptor on device.
-             * POST: Device is microsoft. Handle as MS device.
-             */
             
             // TODO Set the current configuration again. It might go away otherwise
             void     *dataBuffer;
@@ -48,6 +49,11 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // Read the MS OS Compat Descriptor v1
             // dataBuffer and dataBufferSize set in callee
             status = getMsDescriptor(device, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
+            if (status!=kIOReturnSuccess) {
+                device->close(this);
+                return NULL;
+            }
+
 
             // First 18 bytes are USB header. Data at byte 19
             uint64_t descriptorData = USBToHost64(*((uint64_t*)dataBuffer + 18));
@@ -172,6 +178,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         device->close(this);
         
     }
+
     return NULL;
 }
 
@@ -179,7 +186,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 //
 // Check for the presence of an MS OS Descriptor.
 //
-IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
+IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){  
     IOUSBDevRequest	                       request;
     IOUSBConfigurationDescHeader           descriptorHdr;
     IOReturn                               kernelError;
@@ -187,24 +194,24 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     const StringDescriptor                *msftString;
     
     msftString = device->getStringDescriptor(0xEE,0x0);
-    uint64_t *highBytesString       = (uint64_t*)(void*)&msftString;
-    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+4);
+    uint64_t *highBytesString       = (uint64_t*)(void*) &msftString;
+    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+2);
     uint16_t *lowBytesString        = (uint16_t*)(void*)(&msftString+4);
 
-    const char    msftRefString[8]     =  "MSFT100";
-    uint64_t *highBytesRefString       = (uint64_t*)(void*)&msftRefString;
-    uint32_t *medBytesRefString        = (uint32_t*)(void*)(&msftRefString+4);
-    uint16_t *lowBytesRefString        = (uint16_t*)(void*)(&msftRefString+4);
+    const wchar_t msftRefString[8]     = L"MSFT100";
+    uint64_t  *highBytesRefString      = (uint64_t*)(void*) &msftRefString;
+    uint32_t  *medBytesRefString       = (uint32_t*)(void*)(&msftRefString+2);
+    uint16_t  *lowBytesRefString       = (uint16_t*)(void*)(&msftRefString+4);
     
-    // Let's see if we have MSFT100 in narrow
+    // Let's see if we have MSFT100 in
     // We should also compare in wide using msftRefStringUnicode
     if (msftString != NULL && msftString->bLength > StandardUSB::kDescriptorSize){
 
-        //We should compare only the first 14 bytes. The last double byte
-        //is the bRequest value + ContainerID and can be different.
-        //Comparing two uint128_t would have been much more elegant.
+        // We should compare only the first 14 bytes. The last double byte
+        // is the bRequest value + ContainerID and can be different.
+        // Comparing two uint128_t would have been much more elegant.
         if((*highBytesRefString== *highBytesString) &&
-           (*medBytesRefString == *medBytesString)  &&
+           (*medBytesRefString == *medBytesString ) &&
            (*lowBytesRefString == *lowBytesString))
         return kIOReturnSuccess;
     }
