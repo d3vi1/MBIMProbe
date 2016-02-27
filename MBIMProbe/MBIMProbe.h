@@ -17,7 +17,6 @@
 #include <IOKit/usb/StandardUSB.h>
 #include <IOKit/usb/IOUSBHostDevice.h>
 #include <IOKit/usb/IOUSBHostInterface.h>
-//#include <IOKit/usb/IOUSBMassStorageClass.h>
 #include <sys/_endian.h>
 
 class MBIMProbe : public IOService
@@ -26,17 +25,8 @@ class MBIMProbe : public IOService
     OSDeclareDefaultStructors(MBIMProbe)
 
 private:
-    virtual bool        MergeDictionaryIntoProvider  (IOService *  provider, OSDictionary *  mergeDict);
-    virtual bool        MergeDictionaryIntoDictionary(OSDictionary *  sourceDictionary,  OSDictionary *  targetDictionary);
-    virtual bool        searchMbimConfiguration      (IOUSBHostDevice *device);
     virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device);
-    virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
     virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device, uint16_t interfaceNumber, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
-    virtual IOReturn    huaweiMode1                  (IOUSBHostInterface *interface);
-    virtual IOReturn    huaweiMode2                  (IOUSBHostInterface *interface);
-    virtual IOReturn    ejectCD                      (IOUSBHostInterface *interface);
-//    virtual IOReturn    haveCDCinterfaces();
-//    virtual IOReturn    haveRNDISInterfaces();
 public:
     IOUSBHostDevice	   *fpDevice;
     virtual bool        init(OSDictionary *properties = 0);
