@@ -15,6 +15,7 @@ OSDefineMetaClassAndStructors(MBIMProbe, IOService)
 
 IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
+    IOLog("Hello World!");
     const IORegistryPlane * usbPlane = getPlane(kIOUSBPlane);
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
     IOReturn                status;

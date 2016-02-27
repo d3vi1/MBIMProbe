@@ -22,7 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		E5138B0C19113B21004AC1C8 /* MBIMProbe-10.11.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MBIMProbe-10.11.kext"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E5138B0C19113B21004AC1C8 /* MBIMProbe.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MBIMProbe.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		E5138B1319113B21004AC1C8 /* MBIMProbe-10.11-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MBIMProbe-10.11-Info.plist"; sourceTree = "<group>"; };
 		E5138B1519113B21004AC1C8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E5138B1719113B21004AC1C8 /* MBIMProbe.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = MBIMProbe.cpp; sourceTree = "<group>"; };
@@ -75,7 +75,7 @@
 		E5138B0D19113B21004AC1C8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E5138B0C19113B21004AC1C8 /* MBIMProbe-10.11.kext */,
+				E5138B0C19113B21004AC1C8 /* MBIMProbe.kext */,
 				E58F6C711C594720005F2279 /* MBIMProbe-10.9.kext */,
 				E58F6C7F1C594739005F2279 /* MBIMProbe-10.6.kext */,
 			);
@@ -164,7 +164,7 @@
 			);
 			name = "MBIMProbe-10.11";
 			productName = MBIMProbe;
-			productReference = E5138B0C19113B21004AC1C8 /* MBIMProbe-10.11.kext */;
+			productReference = E5138B0C19113B21004AC1C8 /* MBIMProbe.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
 		E58F6C651C594720005F2279 /* MBIMProbe-10.9 */ = {
@@ -369,7 +369,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -386,7 +386,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
