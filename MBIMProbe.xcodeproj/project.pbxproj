@@ -30,9 +30,9 @@
 		E5138B1F19113B93004AC1C8 /* MBIMProbe.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MBIMProbe.h; sourceTree = "<group>"; };
 		E58F6C621C5919A1005F2279 /* MSOSDescriptorV1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSOSDescriptorV1.h; sourceTree = "<group>"; };
 		E58F6C641C591C3F005F2279 /* MSOSDescriptorV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MSOSDescriptorV2.h; sourceTree = "<group>"; };
-		E58F6C711C594720005F2279 /* MBIMProbe-10.9.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MBIMProbe-10.9.kext"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E58F6C711C594720005F2279 /* MBIMProbe.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MBIMProbe.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		E58F6C721C594720005F2279 /* MBIMProbe-10.6-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "MBIMProbe-10.6-Info.plist"; path = "/Users/razvan/Desktop/Documents/Projects/MBIMProbe/MBIMProbe/MBIMProbe-10.6-Info.plist"; sourceTree = "<absolute>"; };
-		E58F6C7F1C594739005F2279 /* MBIMProbe-10.6.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MBIMProbe-10.6.kext"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E58F6C7F1C594739005F2279 /* MBIMProbe.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MBIMProbe.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		E58F6C801C594739005F2279 /* MBIMProbe-10.9-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "MBIMProbe-10.9-Info.plist"; path = "/Users/razvan/Desktop/Documents/Projects/MBIMProbe/MBIMProbe/MBIMProbe-10.9-Info.plist"; sourceTree = "<absolute>"; };
 		E58F6C811C59F70F005F2279 /* 3GModems.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 3GModems.h; sourceTree = "<group>"; };
 		E5E4756D1C57B531006FF47C /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
@@ -76,8 +76,8 @@
 			isa = PBXGroup;
 			children = (
 				E5138B0C19113B21004AC1C8 /* MBIMProbe.kext */,
-				E58F6C711C594720005F2279 /* MBIMProbe-10.9.kext */,
-				E58F6C7F1C594739005F2279 /* MBIMProbe-10.6.kext */,
+				E58F6C711C594720005F2279 /* MBIMProbe.kext */,
+				E58F6C7F1C594739005F2279 /* MBIMProbe.kext */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -183,12 +183,12 @@
 			);
 			name = "MBIMProbe-10.9";
 			productName = MBIMProbe;
-			productReference = E58F6C711C594720005F2279 /* MBIMProbe-10.9.kext */;
+			productReference = E58F6C711C594720005F2279 /* MBIMProbe.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
-		E58F6C731C594739005F2279 /* MBIMProbe-10.6 */ = {
+		E58F6C731C594739005F2279 /* MBIMProbe-10.5 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E58F6C7C1C594739005F2279 /* Build configuration list for PBXNativeTarget "MBIMProbe-10.6" */;
+			buildConfigurationList = E58F6C7C1C594739005F2279 /* Build configuration list for PBXNativeTarget "MBIMProbe-10.5" */;
 			buildPhases = (
 				E58F6C741C594739005F2279 /* Sources */,
 				E58F6C761C594739005F2279 /* Frameworks */,
@@ -200,9 +200,9 @@
 			);
 			dependencies = (
 			);
-			name = "MBIMProbe-10.6";
+			name = "MBIMProbe-10.5";
 			productName = MBIMProbe;
-			productReference = E58F6C7F1C594739005F2279 /* MBIMProbe-10.6.kext */;
+			productReference = E58F6C7F1C594739005F2279 /* MBIMProbe.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
 /* End PBXNativeTarget section */
@@ -233,7 +233,7 @@
 			targets = (
 				E5138B0B19113B21004AC1C8 /* MBIMProbe-10.11 */,
 				E58F6C651C594720005F2279 /* MBIMProbe-10.9 */,
-				E58F6C731C594739005F2279 /* MBIMProbe-10.6 */,
+				E58F6C731C594739005F2279 /* MBIMProbe-10.5 */,
 			);
 		};
 /* End PBXProject section */
@@ -403,7 +403,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -420,7 +420,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -437,7 +437,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -454,7 +454,7 @@
 				MODULE_NAME = net.shmessenger.darwin.MBIMProbe;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.shmessenger.darwin.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -490,7 +490,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E58F6C7C1C594739005F2279 /* Build configuration list for PBXNativeTarget "MBIMProbe-10.6" */ = {
+		E58F6C7C1C594739005F2279 /* Build configuration list for PBXNativeTarget "MBIMProbe-10.5" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E58F6C7D1C594739005F2279 /* Debug */,
