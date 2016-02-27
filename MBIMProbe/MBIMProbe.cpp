@@ -25,7 +25,13 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     
     if (device && usbPlane)
     {
+        //Get exclusive access to the USB device
         device->open(this);
+        
+        
+        IOLog("We have the USB device exclusively. Now checking for the MSFT100 descriptor");
+        IOSleep(10000);
+        
         if (checkMsOsDescriptor(device)==kIOReturnSuccess){
             /* PRE: There is a MSFT100 descriptor on device.
              * POST: Device is microsoft. Handle as MS device.
@@ -34,6 +40,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // TODO Set the current configuration again. It might go away otherwise
             void     *dataBuffer;
             uint32_t  dataBufferSize;
+            
+            IOLog("We have a MSFT100 descriptor. We're now getting the COMPATID descriptor");
+            IOSleep(1000);
+
             
             // Read the MS OS Compat Descriptor v1
             // dataBuffer and dataBufferSize set in callee
@@ -131,7 +141,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     device->close(this);
                     return NULL;
                     break;
-
                 case MS_OS_10_BLUTUTH_COMPATIBLE_ID:
                     IOLog("Bluetooth");
                     switch (descriptorData) {
