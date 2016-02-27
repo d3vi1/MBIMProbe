@@ -17,7 +17,7 @@
  
      bLength             1  0x12        Length of the descriptor.
      bDescriptorType     1  0x03        Descriptor type. A value of 0x03 indicates a Microsoft OS string descriptor.
-     qwSignature        14 ‘MSFT100’    Signature field.
+     qwSignature        14 L"MSFT100"    Signature field.
      bMS_VendorCode      1  0x??        Vendor Code.
      bFlags	             1  0x02        Bit 1: ContainerID Support Bool. Bits 0,2–7: Reserved
  
@@ -70,6 +70,7 @@
 #define   MS_OS_10_BLUTUTH_COMPATIBLE_ID 0x424C555455544800
 #define   MS_OS_10_WINUSB_COMPATIBLE_ID  0x57494E5553420000
 #define   MS_OS_10_ALTRCFG_COMPATIBLE_ID 0x414C545243464700
+
 #define   MS_OS_10_NULL_SUBCOMPATIBLE_ID 0x0000000000000000
 #define   MS_OS_10_BT11_SUBCOMPATIBLE_ID 0x3131000000000000
 #define   MS_OS_10_BT12_SUBCOMPATIBLE_ID 0x3132000000000000

@@ -35,8 +35,8 @@ private:
     virtual IOReturn    huaweiMode1                  (IOUSBHostInterface *interface);
     virtual IOReturn    huaweiMode2                  (IOUSBHostInterface *interface);
     virtual IOReturn    ejectCD                      (IOUSBHostInterface *interface);
-    virtual IOReturn    haveCDCinterfaces();
-    virtual IOReturn    haveRNDISInterfaces();
+//    virtual IOReturn    haveCDCinterfaces();
+//    virtual IOReturn    haveRNDISInterfaces();
 public:
     IOUSBHostDevice	   *fpDevice;
     virtual bool        init(OSDictionary *properties = 0);
