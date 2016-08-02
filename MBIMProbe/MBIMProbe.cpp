@@ -234,16 +234,24 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     }
     IOLog ("\n");
     
-    uint64_t *highBytesString       = (uint64_t*)(void*)(&msftString+2);
-    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+4);
-    uint16_t *lowBytesString        = (uint16_t*)(void*)(&msftString+6);
+    uint64_t *highBytesString       = (uint64_t*)(void*)(msftString+2);
+    uint32_t *medBytesString        = (uint32_t*)(void*)(msftString+10);
+    uint16_t *lowBytesString        = (uint16_t*)(void*)(msftString+14);
+
+    uint64_t  highBytesRefString;
+    uint32_t  medBytesRefString;
+    uint16_t  lowBytesRefString;
+    //TLV: 0x12(\^R) 0x3(\^C)
+    //High:   0x4d(M) 0x0() 0x53(S) 0x0() 0x46(F) 0x0() 0x54(T) 0x0()
+    //Med:    0x31(1) 0x0() 0x30(0) 0x0()
+    //Low:    0x30(0) 0x0()
+    //Cookie: 0x4(\^D) 0x0()
+    highBytesRefString=0x005400460053004d; //M\0S\0\F\0T\0 in some order
+    medBytesRefString =0x00300031; //1\00\00
+    lowBytesRefString =0x0030;
     
-    const wchar_t msftRefString[9]     = L"MSFT100 ";
-    uint64_t  *highBytesRefString      = (uint64_t*)(void*) &msftRefString;
-    uint32_t  *medBytesRefString       = (uint32_t*)(void*)(&msftRefString+2);
-    uint16_t  *lowBytesRefString       = (uint16_t*)(void*)(&msftRefString+4);
     
-    IOLog("-%s[%p]::CheckMsOsDescriptor: High: 0x%llx 0x%llx \nMed: 0x%x 0x%x\nLow: 0x%x 0x%x\n", getName(), this, *highBytesString, *highBytesRefString, *medBytesString, *medBytesRefString,*lowBytesString, *lowBytesRefString);
+    IOLog("-%s[%p]::CheckMsOsDescriptor: High: 0x%llx 0x%llx \nMed: 0x%x 0x%x\nLow: 0x%x 0x%x\n", getName(), this, *highBytesString, highBytesRefString, *medBytesString, medBytesRefString, *lowBytesString, lowBytesRefString);
     
     // Let's see if we have MSFT100 in
     // We should also compare in wide using msftRefStringUnicode
@@ -254,9 +262,9 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
         // We should compare only the first 14 bytes. The last double byte
         // is the bRequest value + ContainerID and can be different.
         // Comparing two uint128_t would have been much more elegant.
-        if((*highBytesRefString== *highBytesString) &&
-           (*medBytesRefString == *medBytesString ) &&
-           (*lowBytesRefString == *lowBytesString)) {
+        if((highBytesRefString== *highBytesString) &&
+           (medBytesRefString == *medBytesString ) &&
+           (lowBytesRefString == *lowBytesString)) {
             IOLog("-%s[%p]::CheckMsOsDescriptor: IT WOOOORKS\n", getName(), this);
             return kIOReturnSuccess;
         }
