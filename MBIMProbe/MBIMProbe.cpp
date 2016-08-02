@@ -69,6 +69,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // dataBuffer and dataBufferSize set in callee
             status = getMsDescriptor(device, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
             if (status!=kIOReturnSuccess) {
+                IOLog("-%s[%p]::probe We failed miserably with error: %x", getName(), this, status);
                 device->close(this);
                 return NULL;
             }
@@ -241,15 +242,14 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     uint64_t  highBytesRefString;
     uint32_t  medBytesRefString;
     uint16_t  lowBytesRefString;
-    //TLV: 0x12(\^R) 0x3(\^C)
-    //High:   0x4d(M) 0x0() 0x53(S) 0x0() 0x46(F) 0x0() 0x54(T) 0x0()
-    //Med:    0x31(1) 0x0() 0x30(0) 0x0()
-    //Low:    0x30(0) 0x0()
-    //Cookie: 0x4(\^D) 0x0()
-    highBytesRefString=0x005400460053004d; //M\0S\0\F\0T\0 in some order
-    medBytesRefString =0x00300031; //1\00\00
+    //TLV:    0x12(Length 18 bytes) 0x3(Type: String)
+    //High:   0x4d(M) 0x0(NUL) 0x53(S) 0x0(NUL) 0x46(F) 0x0(NUL) 0x54(T) 0x0(NUL)
+    //Med:    0x31(1) 0x0(NUL) 0x30(0) 0x0(NUL)
+    //Low:    0x30(0) 0x0(NUL)
+    //Cookie: 0x4(Cookie) 0x0(NUL)
+    highBytesRefString=0x005400460053004d;
+    medBytesRefString =0x00300031;
     lowBytesRefString =0x0030;
-    
     
     IOLog("-%s[%p]::CheckMsOsDescriptor: High: 0x%llx 0x%llx \nMed: 0x%x 0x%x\nLow: 0x%x 0x%x\n", getName(), this, *highBytesString, highBytesRefString, *medBytesString, medBytesRefString, *lowBytesString, lowBytesRefString);
     
