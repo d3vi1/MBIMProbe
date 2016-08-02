@@ -26,7 +26,11 @@ class MBIMProbe : public IOService
 
 private:
     virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device);
-    virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device, uint16_t interfaceNumber, uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize);
+    virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device,
+                                                      uint16_t interfaceNumber,
+                                                      uint16_t DescriptorType,
+                                                      void **dataBuffer,
+                                                      uint32_t *dataBufferSize);
 public:
     IOUSBHostDevice	   *fpDevice;
     virtual bool        init(OSDictionary *properties = 0);

@@ -16,20 +16,24 @@
  MSFT100 Descriptor Description:
  
      bLength             1  0x12        Length of the descriptor.
-     bDescriptorType     1  0x03        Descriptor type. A value of 0x03 indicates a Microsoft OS string descriptor.
-     qwSignature        14 L"MSFT100"    Signature field.
+     bDescriptorType     1  0x03        Descriptor type. A value of 0x03 indi-
+                                        -cates a Microsoft OS string descriptor.
+     qwSignature        14  L"MSFT100"  Signature field.
      bMS_VendorCode      1  0x??        Vendor Code.
-     bFlags	             1  0x02        Bit 1: ContainerID Support Bool. Bits 0,2–7: Reserved
+     bFlags	             1  0x02        Bit 1: ContainerID Support Bool. Bits
+                                        0,2–7: Reserved
  
- Vendor Code: Save it for later as it's needed for each MS Request. Works like a cookie.
- ContainerID: Show all the devices a single one regardless of function/interface grouping.
-              Think of multifunction printers. Each one of them contains a few USB devices
-              such as SD/CF Readers, Scanners, HID (keypad), Printer, Fax.
-              Show the Multi Function Printer as a single device even if the HID and scanners
-              are grouped together.
-              Container IDs are actually used with MSOSDescriptor V2. Oddly enough, they
-              were introduced in MS OS Descriptor v2 and used in MS OS Descriptor v1. But
-              it's Microsoft, so no surprises.
+ Vendor Code: Save it for later as it's needed for each MS Request. Works like
+              a cookie.
+ ContainerID: Show all the devices a single one regardless of function/interface
+              grouping.
+              Think of multifunction printers. Each one of them contains a few
+              USB devices such as SD/CF Readers, Scanners, HID (keypad),
+              Printer, Fax. Show the Multi Function Printer as a single device
+              even if the HID and scanners are grouped together.
+              Container IDs are actually used with MSOSDescriptor V2. Oddly
+              enough, they were introduced in MS OS Descriptor v2 and used in
+              MS OS Descriptor v1. But it's Microsoft, so no surprises.
  
 */
 
@@ -48,28 +52,25 @@
  Values are: RNDIS, PTP, MTP, Xusb20, Bluetooth, Winusb, ALTRCFG
              Subvalues are only for Bluetooth and MBIM/ALTRCFG
  
- Except bluetooth and Alternate all compatible IDs use NULL as a
- subcompatible ID.
+ Except BTooth and Alternate all compatible IDs use NULL as a subcompatible ID.
  
  Bluetooth can only use BT11, BT12 and EDR as a subcompatible ID.
  
  The definitions below are from:
  "MBIM-Based Mobile Broadband Requirements for Windows"
  
- MBIM means that it defaults to MBIM (current config). No subcompatible
- ID allowed.
- ALTRCFG means that the subcompatible ID indicates which config
+ MBIM means that it defaults to MBIM (current config). No subcompatible ID
+ allowed. ALTRCFG means that the subcompatible ID indicates which config
  contains the MBIM.
  
- CDC_WMC means that it defaults to CDC_WMC (current config). No
- subcompatible ID allowed.
- WMCALTR means that the subcompatible ID indicates which config
+ CDC_WMC means that it defaults to CDC_WMC (current config). No subcompatible ID
+ allowed. WMCALTR means that the subcompatible ID indicates which config
  contains the WMC.
 
  The compatible ID Descriptor has a header and bCount x Sections.
  
- Warning, this is network order padded ASCII. Always use the USBTOHLL()
- endian conversion macro.
+ Warning, this is network order padded ASCII. Always use the USBTOHLL() endian
+ conversion macro.
  
  */
 

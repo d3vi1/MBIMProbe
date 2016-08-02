@@ -18,7 +18,9 @@ OSDefineMetaClassAndStructors(MBIMProbe, IOService)
 //
 IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
-    IOLog("Hello World!");
+#ifdef DEBUG
+    IOLog("-%s[%p]::probe Hello World!", getName(), this);
+#endif
     const IORegistryPlane * usbPlane = getPlane(kIOUSBPlane);
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
     IOReturn                status;
@@ -28,10 +30,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         //Get exclusive access to the USB device
         device->open(this);
         
-        
-        IOLog("We have the USB device exclusively. Now checking for the MSFT100 descriptor");
+#ifdef DEBUG
+        IOLog("-%s[%p]::probe We have the USB device exclusively. Now checking for the MSFT100 descriptor\n", getName(), this);
         IOSleep(10000);
-        
+#endif
         /* 
          * PRE:  There is a MSFT100 descriptor on device.
          * POST: Device is microsoft. Handle as MS device.
@@ -41,10 +43,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // TODO Set the current configuration again. It might go away otherwise
             void     *dataBuffer;
             uint32_t  dataBufferSize;
-            
-            IOLog("We have a MSFT100 descriptor. We're now getting the COMPATID descriptor");
+#ifdef DEBUG
+            IOLog("-%s[%p]::probe We have a MSFT100 descriptor. We're now getting the COMPATID descriptor\n", getName(), this);
             IOSleep(1000);
-
+#endif
             
             // Read the MS OS Compat Descriptor v1
             // dataBuffer and dataBufferSize set in callee
@@ -62,34 +64,34 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             //Now let's act upon the descriptor.
             switch (descriptorData){
                 case 0:
-                    IOLog("MS Compatible Descriptor: Null Compatible ID\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: Null Compatible ID\n", getName(), this);
                     break;
                 case MS_OS_10_RNDIS_COMPATIBLE_ID:
                     //Let's also look for something else before we
                     //PublishRNDISConfiguration(device);
-                    IOLog("MS Compatible Descriptor: RNDIS\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: RNDIS\n", getName(), this);
                     break;
                 case MS_OS_10_MTP_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: MTP\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MTP\n", getName(), this);
                     break;
                 case MS_OS_10_PTP_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: PTP\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: PTP\n", getName(), this);
                     break;
                 case MS_OS_10_WINUSB_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: WINUSB\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: WINUSB\n", getName(), this);
                     break;
                 case MS_OS_10_XUSB20_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: X USB 2.0\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: X USB 2.0\n", getName(), this);
                     break;
                 case MS_OS_10_MBIM_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: MBIM on default config.\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MBIM on default config.\n", getName(), this);
                     //setconfig(currentConfig);
                     //PublishMBIMConfiguration(device)
                     IOFree(dataBuffer, dataBufferSize);
                     device->close(this);
                     return NULL;
                 case MS_OS_10_ALTRCFG_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: MBIM");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MBIM", getName(), this);
                     switch (subDescriptorData){
                         case MS_OS_10_ALT2_SUBCOMPATIBLE_ID:
                             IOLog(" on config 2");
@@ -102,7 +104,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                             //PublishMBIMConfiguration(device);
                             break;
                         case MS_OS_10_ALT4_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 2");
+                            IOLog(" on config 4");
                             //setconfig(4);
                             //PublishMBIMConfiguration(device);
                             break;
@@ -115,32 +117,32 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     return NULL;
                     break;
                 case MS_OS_10_CDC_WMC_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: CDC-WMC on default config.\n");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: CDC-WMC on default config.\n", getName(), this);
                     //setconfig(currentConfig);
-                    //PublishMBIMConfiguration(device)
+                    //PublishWMCConfiguration(device)
                     IOFree(dataBuffer, dataBufferSize);
                     device->close(this);
                     return NULL;
                 case MS_OS_10_WMCALTR_COMPATIBLE_ID:
-                    IOLog("MS Compatible Descriptor: CDC-WMC");
+                    IOLog("-%s[%p]::probe MS Compatible Descriptor: CDC-WMC", getName(), this);
                     switch (subDescriptorData){
                         case MS_OS_10_ALT2_SUBCOMPATIBLE_ID:
                             IOLog(" on config 2");
                             //setconfig(2);
-                            //PublishMBIMConfiguration(device);
+                            //PublishWMCConfiguration(device);
                             break;
                         case MS_OS_10_ALT3_SUBCOMPATIBLE_ID:
                             IOLog(" on config 3");
                             //setconfig(3);
-                            //PublishMBIMConfiguration(device);
+                            //PublishWMCConfiguration(device);
                             break;
                         case MS_OS_10_ALT4_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 2");
+                            IOLog(" on config 4");
                             //setconfig(4);
-                            //PublishMBIMConfiguration(device);
+                            //PublishWMCConfiguration(device);
                             break;
                         default:
-                            IOLog(" incorrect Subcompatible descriptor\n");
+                            IOLog(" with incorrect Subcompatible descriptor\n");
                             break;
                     }
                     IOFree(dataBuffer, dataBufferSize);
@@ -148,7 +150,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     return NULL;
                     break;
                 case MS_OS_10_BLUTUTH_COMPATIBLE_ID:
-                    IOLog("Bluetooth");
+                    IOLog("-%s[%p]::probe Bluetooth", getName(), this);
                     switch (descriptorData) {
                         case MS_OS_10_NULL_SUBCOMPATIBLE_ID:
                             IOLog(" incorrect Subcompatible descriptor\n");
@@ -163,17 +165,17 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                             IOLog(" v2.0+EDR\n");
                             break;
                         default:
-                            IOLog(" incorrect Subcompatible descriptor\n");
+                            IOLog(" with incorrect Subcompatible descriptor\n");
                             break;
                     }
                 default:
-                    IOLog("Incorrect Compatible descriptor\n");
+                    IOLog("-%s[%p]::probe Incorrect Compatible descriptor\n", getName(), this);
                     break;
             }
 
         }
         
-        IOLog("We shouldn't even get here on K4201-Z");
+        IOLog("-%s[%p]::probe We shouldn't even get here on K4201-Z", getName(), this);
 
         device->close(this);
         
@@ -293,6 +295,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceN
         MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER *header = (MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER*) *dataBuffer;
 
         //If the descriptor is smaller than 4K we'll get it in one shot
+        //It should be 4K-sizeof(usbTransferHeader)
         if (header->dwLength <= 0x1000) {
             *dataBuffer           = IOMalloc(header->dwLength);
             *dataBufferSize       = header->dwLength;
