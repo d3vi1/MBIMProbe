@@ -9,7 +9,7 @@
 #ifndef MSOSDescriptorV1_h
 #define MSOSDescriptorV1_h
 
-#include <IOKit/usb/USB.h>
+#include <IOKit/usb/IOUSBHostFamily.h>
 
 /*
  

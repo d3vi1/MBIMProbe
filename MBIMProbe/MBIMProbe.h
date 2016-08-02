@@ -13,8 +13,8 @@
 #include "MSOSDescriptorV2.h"
 #include "3GModems.h"
 #include <IOKit/IOKitKeys.h>
-#include <IOKit/usb/USB.h>
-#include <IOKit/usb/StandardUSB.h>
+//#include <IOKit/usb/USB.h>
+//#include <IOKit/usb/StandardUSB.h>
 #include <IOKit/usb/IOUSBHostDevice.h>
 #include <IOKit/usb/IOUSBHostInterface.h>
 #include <sys/_endian.h>

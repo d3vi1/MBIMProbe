@@ -19,7 +19,7 @@ OSDefineMetaClassAndStructors(MBIMProbe, IOService)
 IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
 #ifdef DEBUG
-    IOLog("-%s[%p]::probe Hello World!", getName(), this);
+    IOLog("-%s[%p]::probe Hello World!\n", getName(), this);
 #endif
     const IORegistryPlane * usbPlane = getPlane(kIOUSBPlane);
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
@@ -30,9 +30,26 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         //Get exclusive access to the USB device
         device->open(this);
         
+        //
+        //Let's find out a few things about this device.
+        //First: The number of configurations
+        //
+        uint8_t configNumber  = 0;
+        StandardUSB::DeviceRequest request;
+        request.bmRequestType = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
+        request.bRequest      = kDeviceRequestGetConfiguration;
+        request.wValue        = 0;
+        request.wIndex        = 0;
+        request.wLength       = sizeof(configNumber);
+        
+        uint32_t bytesTransferred = 0;
+        
+        device->deviceRequest(this, request, &configNumber, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
+        
+//        const StandardUSB::ConfigurationDescriptor* configDescriptor = device->getConfigurationDescriptor(configNumber);
+        
 #ifdef DEBUG
-        IOLog("-%s[%p]::probe We have the USB device exclusively. Now checking for the MSFT100 descriptor\n", getName(), this);
-        IOSleep(10000);
+        IOLog("-%s[%p]::probe We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", getName(), this, USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), configNumber);
 #endif
         /* 
          * PRE:  There is a MSFT100 descriptor on device.
@@ -175,7 +192,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
         }
         
-        IOLog("-%s[%p]::probe We shouldn't even get here on K4201-Z", getName(), this);
+        IOLog("-%s[%p]::probe We shouldn't even get here on K4201-Z\n", getName(), this);
 
         device->close(this);
         
@@ -189,35 +206,62 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 // Check for the presence of an MS OS Descriptor.
 //
 IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){  
-    IOUSBDevRequest	                       request;
-    IOUSBConfigurationDescHeader           descriptorHdr;
-    IOReturn                               kernelError;
-    IOUSBConfigurationDescriptorPtr       *descriptor;
-    const StringDescriptor                *msftString;
+    uint16_t                               msftStringSize = 18;
+    char                                  *msftString = (char *)IOMalloc(msftStringSize);
+//    StandardUSB::Descriptor               *msftStringDescriptor;
+    bzero(msftString, msftStringSize);
     
-    msftString = device->getStringDescriptor(0xEE,0x0);
-    uint64_t *highBytesString       = (uint64_t*)(void*) &msftString;
-    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+2);
-    uint16_t *lowBytesString        = (uint16_t*)(void*)(&msftString+4);
-
-    const wchar_t msftRefString[8]     = L"MSFT100";
+    StandardUSB::DeviceRequest request;
+    request.bmRequestType = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
+    request.bRequest      = kDeviceRequestGetDescriptor;
+    request.wValue        = (0x3 << 8) | 0xEE;
+    request.wIndex        = 0;
+    request.wLength       = 0x12;
+    
+    uint32_t bytesTransferred = 0;
+    uint32_t completionTimeoutMs = kUSBHostDefaultControlCompletionTimeoutMS;
+    IOReturn Error = device->deviceRequest(this, request, (void *)msftString, bytesTransferred, completionTimeoutMs);
+    
+    if (Error){
+        IOLog("-%s[%p]::CheckMsOsDescriptor: Couldn't get the descriptor, transferred %d bytes: %x\n",getName(), this, bytesTransferred, Error);
+        return kIOReturnNotFound;
+    }
+    IOLog("-%s[%p]::CheckMsOsDescriptor: Got the MSFT100 descriptor, transferred %d bytes\n",getName(), this, bytesTransferred);
+    
+    IOLog("-%s[%p]::CheckMsOsDescriptor: ", getName(), this);
+    for(int i = 0; i < 18; i++) {
+        IOLog("0x%0x(%c) ", *(uint8_t*)(msftString + i), *(char*)(msftString + i));
+    }
+    IOLog ("\n");
+    
+    uint64_t *highBytesString       = (uint64_t*)(void*)(&msftString+2);
+    uint32_t *medBytesString        = (uint32_t*)(void*)(&msftString+4);
+    uint16_t *lowBytesString        = (uint16_t*)(void*)(&msftString+6);
+    
+    const wchar_t msftRefString[9]     = L"MSFT100 ";
     uint64_t  *highBytesRefString      = (uint64_t*)(void*) &msftRefString;
     uint32_t  *medBytesRefString       = (uint32_t*)(void*)(&msftRefString+2);
     uint16_t  *lowBytesRefString       = (uint16_t*)(void*)(&msftRefString+4);
     
+    IOLog("-%s[%p]::CheckMsOsDescriptor: High: 0x%llx 0x%llx \nMed: 0x%x 0x%x\nLow: 0x%x 0x%x\n", getName(), this, *highBytesString, *highBytesRefString, *medBytesString, *medBytesRefString,*lowBytesString, *lowBytesRefString);
+    
     // Let's see if we have MSFT100 in
     // We should also compare in wide using msftRefStringUnicode
-    if (msftString != NULL && msftString->bLength > StandardUSB::kDescriptorSize){
-
+    // FIXME: Also check  && msftString->bLength > StandardUSB::kDescriptorSize
+    if (msftString != NULL){
+        IOLog("-%s[%p]::CheckMsOsDescriptor: found\n", getName(), this);
+        
         // We should compare only the first 14 bytes. The last double byte
         // is the bRequest value + ContainerID and can be different.
         // Comparing two uint128_t would have been much more elegant.
         if((*highBytesRefString== *highBytesString) &&
            (*medBytesRefString == *medBytesString ) &&
-           (*lowBytesRefString == *lowBytesString))
-        return kIOReturnSuccess;
+           (*lowBytesRefString == *lowBytesString)) {
+            IOLog("-%s[%p]::CheckMsOsDescriptor: IT WOOOORKS\n", getName(), this);
+            return kIOReturnSuccess;
+        }
     }
-    
+    IOLog("-%s[%p]::CheckMsOsDescriptor: not found\n", getName(), this);
     return kIOReturnNotFound;
 }
 
