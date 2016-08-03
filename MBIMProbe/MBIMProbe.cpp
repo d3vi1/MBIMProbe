@@ -18,9 +18,6 @@ OSDefineMetaClassAndStructors(MBIMProbe, IOService)
 //
 IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
-#ifdef DEBUG
-    IOLog("-%s[%p]::probe Hello World!\n", getName(), this);
-#endif
     const IORegistryPlane * usbPlane = getPlane(kIOUSBPlane);
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
     IOReturn                status;
@@ -30,10 +27,9 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         //Get exclusive access to the USB device
         device->open(this);
         
-        //
+#ifdef DEBUG
         //Let's find out a few things about this device.
         //First: The number of configurations
-        //
         uint8_t configNumber  = 0;
         StandardUSB::DeviceRequest request;
         request.bmRequestType = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
@@ -41,14 +37,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         request.wValue        = 0;
         request.wIndex        = 0;
         request.wLength       = sizeof(configNumber);
-        
         uint32_t bytesTransferred = 0;
-        
         device->deviceRequest(this, request, &configNumber, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
         
-//        const StandardUSB::ConfigurationDescriptor* configDescriptor = device->getConfigurationDescriptor(configNumber);
-        
-#ifdef DEBUG
+        //And then, the idVendor, idProduct, etc.
         IOLog("-%s[%p]::probe We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", getName(), this, USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), configNumber);
 #endif
         /* 
@@ -76,8 +68,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
 
             // First 18 bytes are USB header. Data at byte 19
-            uint64_t descriptorData = USBToHost64(*((uint64_t*)dataBuffer + 18));
-            uint64_t subDescriptorData = USBToHost64(*((uint64_t*)dataBuffer + 18 + 8));
+            uint64_t descriptorData = *((uint64_t*)dataBuffer + 18);
+            uint64_t subDescriptorData = *((uint64_t*)dataBuffer + 18 + 8);
             
             //Now let's act upon the descriptor.
             switch (descriptorData){
@@ -193,8 +185,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
         }
         
-        IOLog("-%s[%p]::probe We shouldn't even get here on K4201-Z\n", getName(), this);
-
         device->close(this);
         
     }
@@ -205,78 +195,57 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 
 //
 // Check for the presence of an MS OS Descriptor.
+// The descriptor is used in both v1 and v2 of the Microsoft OS Descriptors.
 //
-IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){  
-    uint16_t                               msftStringSize = 18;
-    char                                  *msftString = (char *)IOMalloc(msftStringSize);
-//    StandardUSB::Descriptor               *msftStringDescriptor;
+IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
+    // We know that the MSFT String Descriptor is 16 byte long plus the Type and Length
+    uint16_t      msftStringSize   = 18;
+    char         *msftString       = (char *)IOMalloc(msftStringSize);
+    uint32_t      bytesTransferred = 0;
     bzero(msftString, msftStringSize);
     
+    // GetDescriptor(kDescriptorTypeString, kDescriptorIndexEE, kDescriptorLangNull)
     StandardUSB::DeviceRequest request;
-    request.bmRequestType = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
-    request.bRequest      = kDeviceRequestGetDescriptor;
-    request.wValue        = (0x3 << 8) | 0xEE;
-    request.wIndex        = 0;
-    request.wLength       = 0x12;
+    request.bmRequestType    = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
+    request.bRequest         = kDeviceRequestGetDescriptor;
+    request.wValue           = (kDescriptorTypeString << 8) | 0xEE;
+    request.wIndex           = 0;
+    request.wLength          = 0x12;
+    IOReturn kernelError = device->deviceRequest(this, request, (void *)msftString, bytesTransferred, kUSBHostDefaultControlCompletionTimeoutMS);
     
-    uint32_t bytesTransferred = 0;
-    uint32_t completionTimeoutMs = kUSBHostDefaultControlCompletionTimeoutMS;
-    IOReturn Error = device->deviceRequest(this, request, (void *)msftString, bytesTransferred, completionTimeoutMs);
-    
-    if (Error){
-        IOLog("-%s[%p]::CheckMsOsDescriptor: Couldn't get the descriptor, transferred %d bytes: %x\n",getName(), this, bytesTransferred, Error);
+    if (kernelError){
+        IOLog("-%s[%p]::%s: Couldn't get the MSFT100 descriptor, transferred %d bytes: %x\n",getName(), this, __FUNCTION__, bytesTransferred, kernelError);
         return kIOReturnNotFound;
     }
-    IOLog("-%s[%p]::CheckMsOsDescriptor: Got the MSFT100 descriptor, transferred %d bytes\n",getName(), this, bytesTransferred);
-    
-    IOLog("-%s[%p]::CheckMsOsDescriptor: ", getName(), this);
-    for(int i = 0; i < 18; i++) {
-        IOLog("0x%0x(%c) ", *(uint8_t*)(msftString + i), *(char*)(msftString + i));
-    }
-    IOLog ("\n");
-    
+
+    // Let's typecast to appropriate uints to make the comparison easier
     uint64_t *highBytesString       = (uint64_t*)(void*)(msftString+2);
     uint32_t *medBytesString        = (uint32_t*)(void*)(msftString+10);
     uint16_t *lowBytesString        = (uint16_t*)(void*)(msftString+14);
-
-    uint64_t  highBytesRefString;
-    uint32_t  medBytesRefString;
-    uint16_t  lowBytesRefString;
-    //TLV:    0x12(Length 18 bytes) 0x3(Type: String)
-    //High:   0x4d(M) 0x0(NUL) 0x53(S) 0x0(NUL) 0x46(F) 0x0(NUL) 0x54(T) 0x0(NUL)
-    //Med:    0x31(1) 0x0(NUL) 0x30(0) 0x0(NUL)
-    //Low:    0x30(0) 0x0(NUL)
-    //Cookie: 0x4(Cookie) 0x0(NUL)
-    highBytesRefString=0x005400460053004d;
-    medBytesRefString =0x00300031;
-    lowBytesRefString =0x0030;
     
-    IOLog("-%s[%p]::CheckMsOsDescriptor: High: 0x%llx 0x%llx \nMed: 0x%x 0x%x\nLow: 0x%x 0x%x\n", getName(), this, *highBytesString, highBytesRefString, *medBytesString, medBytesRefString, *lowBytesString, lowBytesRefString);
-    
+    //
     // Let's see if we have MSFT100 in
     // We should also compare in wide using msftRefStringUnicode
     // FIXME: Also check  && msftString->bLength > StandardUSB::kDescriptorSize
+    //
     if (msftString != NULL){
-        IOLog("-%s[%p]::CheckMsOsDescriptor: found\n", getName(), this);
+        IOLog("-%s[%p]::%s: found\n", getName(), this, __FUNCTION__);
         
-        // We should compare only the first 14 bytes. The last double byte
-        // is the bRequest value + ContainerID and can be different.
-        // Comparing two uint128_t would have been much more elegant.
-        if((highBytesRefString== *highBytesString) &&
-           (medBytesRefString == *medBytesString ) &&
-           (lowBytesRefString == *lowBytesString)) {
-            IOLog("-%s[%p]::CheckMsOsDescriptor: IT WOOOORKS\n", getName(), this);
+        if((*highBytesString==MS_OS_SIGNATURE_REF_STRING_1) &&
+           (*medBytesString ==MS_OS_SIGNATURE_REF_STRING_2) &&
+           (*lowBytesString ==MS_OS_SIGNATURE_REF_STRING_3)) {
+            IOLog("-%s[%p]::%s: We have a confirmed MSFT100 Descriptor\n", getName(), this, __FUNCTION__);
             return kIOReturnSuccess;
         }
     }
-    IOLog("-%s[%p]::CheckMsOsDescriptor: not found\n", getName(), this);
+    IOLog("-%s[%p]::%s: not found\n", getName(), this, __FUNCTION__);
     return kIOReturnNotFound;
 }
 
 
 //
 // Gets an MS OS Descriptor V1 for the Device if interface is NULL
-// or interface if an interface number is specified.
+// or for the Interface if an interface number is specified.
 //
 IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
     //
@@ -413,6 +382,9 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceN
 }
 
 
+//
+// Just call the superclass to do the starting
+//
 bool MBIMProbe::start(IOService *provider){
 	bool ret;
 	   
@@ -426,6 +398,9 @@ bool MBIMProbe::start(IOService *provider){
 }
 
 
+//
+// Just call the superclass to do the stoping
+//
 void MBIMProbe::stop(IOService *provider){
     
     IOLog("-%s[%p]::stop - calling super::stop\n", getName(), this);
@@ -433,6 +408,9 @@ void MBIMProbe::stop(IOService *provider){
 }
 
 
+//
+// Just call the superclass to do the initializing
+//
 bool MBIMProbe::init(OSDictionary *properties){
     if (super::init(properties) == false)
     {
@@ -443,6 +421,9 @@ bool MBIMProbe::init(OSDictionary *properties){
 }
 
 
+//
+// Just call the superclass to do the freeing
+//
 void MBIMProbe::free(){
     super::free();
     return;
