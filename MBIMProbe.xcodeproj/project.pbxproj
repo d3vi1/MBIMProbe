@@ -391,8 +391,8 @@
 		E5138B1D19113B21004AC1C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MBIMProbe/MBIMProbe-Prefix.pch";
 				INFOPLIST_FILE = "MBIMProbe/MBIMProbe-10.11-Info.plist";
@@ -408,8 +408,8 @@
 		E5138B1E19113B21004AC1C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Mac Developer";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MBIMProbe/MBIMProbe-Prefix.pch";
 				INFOPLIST_FILE = "MBIMProbe/MBIMProbe-10.11-Info.plist";

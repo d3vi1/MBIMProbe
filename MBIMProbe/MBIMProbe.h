@@ -25,8 +25,10 @@ class MBIMProbe : public IOService
     OSDeclareDefaultStructors(MBIMProbe)
 
 private:
-    virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device);
+    virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device,
+                                                      uint8_t *cookie);
     virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device,
+                                                      uint8_t cookie,
                                                       uint16_t interfaceNumber,
                                                       uint16_t DescriptorType,
                                                       void **dataBuffer,
