@@ -53,7 +53,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             void     *dataBuffer;
             uint32_t  dataBufferSize;
 #ifdef DEBUG
-            IOLog("-%s[%p]::probe We have a MSFT100 descriptor. We're now getting the COMPATID descriptor\n", getName(), this);
+            IOLog("-%s[%p]::%s We have a MSFT100 descriptor. We're now getting the COMPATID descriptor\n", getName(), this, __FUNCTION__);
             IOSleep(1000);
 #endif
             
@@ -61,7 +61,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // dataBuffer and dataBufferSize set in callee
             status = getMsDescriptor(device, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
             if (status!=kIOReturnSuccess) {
-                IOLog("-%s[%p]::probe We failed miserably with error: %x", getName(), this, status);
+                IOLog("-%s[%p]::%s We couldn't get the MS_OS_10_REQUEST_EXTENDED_COMPATID descriptor with error: %x", getName(), this, __FUNCTION__, status);
                 device->close(this);
                 return NULL;
             }
@@ -181,13 +181,13 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                 default:
                     IOLog("-%s[%p]::probe Incorrect Compatible descriptor\n", getName(), this);
                     break;
-            }
+            } //switch(descriptorData)
 
-        }
-        
+        } //if(checkMsOsDescriptor)
+
         device->close(this);
         
-    }
+    } //if(device && usbPlane)
 
     return NULL;
 }
@@ -199,8 +199,9 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
 //
 IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     // We know that the MSFT String Descriptor is 16 byte long plus the Type and Length
-    uint16_t      msftStringSize   = 18;
+    size_t        msftStringSize   = 18;
     char         *msftString       = (char *)IOMalloc(msftStringSize);
+    if (msftString == NULL) return kIOReturnVMError;
     uint32_t      bytesTransferred = 0;
     bzero(msftString, msftStringSize);
     
@@ -215,6 +216,7 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
     
     if (kernelError){
         IOLog("-%s[%p]::%s: Couldn't get the MSFT100 descriptor, transferred %d bytes: %x\n",getName(), this, __FUNCTION__, bytesTransferred, kernelError);
+        IOFree(msftString, msftStringSize);
         return kIOReturnNotFound;
     }
 
@@ -235,10 +237,12 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
            (*medBytesString ==MS_OS_SIGNATURE_REF_STRING_2) &&
            (*lowBytesString ==MS_OS_SIGNATURE_REF_STRING_3)) {
             IOLog("-%s[%p]::%s: We have a confirmed MSFT100 Descriptor\n", getName(), this, __FUNCTION__);
+            IOFree(msftString, msftStringSize);
             return kIOReturnSuccess;
         }
     }
-    IOLog("-%s[%p]::%s: not found\n", getName(), this, __FUNCTION__);
+    IOLog("-%s[%p]::%s: MSFT100 was not found\n", getName(), this, __FUNCTION__);
+    IOFree(msftString, msftStringSize);
     return kIOReturnNotFound;
 }
 
@@ -248,136 +252,158 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device){
 // or for the Interface if an interface number is specified.
 //
 IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
-    //
-    //Validating the input parameters
-    //
-    //First one: We can only request COMPATID descriptor device-wide
+    // First input validation:
+    // We can only request COMPATID descriptor device-wide
     if ((interfaceNumber>0) && (DescriptorType==MS_OS_10_REQUEST_EXTENDED_COMPATID)){
         return kIOReturnBadArgument;
     }
-    //Second one: We can only request COMPATID or Extended Properties. Genre is not supported/specified by MS
+    // Second input validation:
+    // We can only request COMPATID or Extended Properties.
+    // Genre is not supported/documented by Microsoft. It just is.
     if ((DescriptorType!=MS_OS_10_REQUEST_EXTENDED_COMPATID)||(DescriptorType!=MS_OS_10_REQUEST_EXTENDED_PROPERTIES)){
         return kIOReturnBadArgument;
     }
 
-    //Get the cookie
-    const StringDescriptor *stringDescriptor = device->getStringDescriptor(0xEE,0x00);
+    // We get the MSFT100 String in order to get our cookie!
+    size_t        msftStringSize   = 18;
+    char         *msftString       = (char *)IOMalloc(msftStringSize);
+    if (msftString == NULL) return kIOReturnVMError;
+    uint32_t      bytesTransferred = 0;
+    bzero(msftString, msftStringSize);
+    DeviceRequest              request;
+    request.bmRequestType          = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
+    request.bRequest               = kDeviceRequestGetDescriptor;
+    request.wValue                 = (kDescriptorTypeString << 8) | 0xEE;
+    request.wIndex                 = 0;
+    request.wLength                = 0x12;
+    IOReturn kernelError           = device->deviceRequest(this, request, (void *)msftString, bytesTransferred, kUSBHostDefaultControlCompletionTimeoutMS);
+    
+    if (kernelError){
+        IOLog("-%s[%p]::%s: Couldn't get the MSFT100 descriptor, transferred %d bytes: %x\n",getName(), this, __FUNCTION__, bytesTransferred, kernelError);
+        IOFree(msftString, msftStringSize);
+        return kIOReturnNotFound;
+    }
+
+    //Typecast the cookie
+    StringDescriptor *stringDescriptor = (StringDescriptor*)msftString;
     
     
-    //If we've got the cookie, let's play with it
-    if (stringDescriptor != NULL && stringDescriptor->bLength > StandardUSB::kDescriptorSize) {
+    // If the String Descriptor is not valid, we clean-up and bail-out
+    if ((stringDescriptor == NULL) | (stringDescriptor->bLength < StandardUSB::kDescriptorSize)) {
+        IOFree(msftString, msftStringSize);
+        msftString       = NULL;
+        stringDescriptor = NULL;
+        return kIOReturnNotFound;
+    }
+    
+    // Since it's a valid string (previously checked),
+    // we now save the cookie the bRequest uint8
+    uint8_t          bRequest  = stringDescriptor->bString[15];
+    IOFree(msftString, msftStringSize);
+    msftString                 = NULL;
+    stringDescriptor           = NULL;
+    request.bmRequestType      = 0xC0;
+    request.bRequest           = bRequest;                      // I can't explain why it's declared as single byte.
+    request.wIndex             = DescriptorType;                // The requested descriptor.
+    if (interfaceNumber > 0) {                                  // This only applies to Extended Properties as.
+        request.bmRequestType = 0xC1;                           // CompatID doesn't have a per-interface
+    } else {
+        request.bmRequestType = 0xC0;
+    }
+    if (DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID){  // If it's MS_OS_10_REQUEST_EXTENDED_COMPATID
+        request.wValue         = 0;                             //    we request DeviceWide
+        request.wLength        = 0x28;                          //    and it only takes 40 bytes
+        *dataBufferSize        = 0x28;
+    } else {                                                    // If it's MS_OS_10_REQUEST_EXTENDED_PROPERTIES
+        request.wValue         = interfaceNumber;               //    we specify the interface (if one is requested) in the low
+                                                                //    bytes and the page number in the high bytes.
+                                                                //    Since we're just getting the header, high=0 so we just put
+                                                                //    the interface number in USB order.
+        request.wLength        = 0x10;                          //    The actual request will be made later.
+        *dataBufferSize        = 0x10;
+    }
         
-        // Prepare request for DescriptorType and write into dataBuffer
         
-        DeviceRequest    request;
-        uint8_t          bRequest  = stringDescriptor->bString[15];
+    *dataBuffer = IOMalloc(request.wLength);
+    if (dataBuffer == NULL) return kIOReturnVMError;
         
-        request.bmRequestType      = 0xC0;
-        request.bRequest           = bRequest;                     // I can't explain why it's declared as single byte.
-        request.wIndex             = DescriptorType;               // The requested descriptor.
-        if (interfaceNumber > 0) {                                 // This only applies to Extended Properties as.
-            request.bmRequestType = 0xC1;                          // CompatID doesn't have a per-interface
+    IOReturn status = device->deviceRequest(this, request, *dataBuffer, *dataBufferSize, kUSBHostStandardRequestCompletionTimeout);
+    if(status != kIOReturnSuccess) return status;
+
+    // The CompatID descriptor is a single request of known size so we can finish here
+    // It's clear that below we're talking about Extended Properties
+    if (DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID)
+        return kIOReturnSuccess;
+
+    // We can cast the variable like this regardless of the actual descriptor type
+    // since both descriptors get transferred the same way and they both provide the
+    // much needed dwLength.
+        
+    MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER *header = (MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER*) *dataBuffer;
+
+    //If the descriptor is smaller than 4K we'll get it in one shot
+    //It should be 4K-sizeof(usbTransferHeader)
+    if (header->dwLength <= 0x1000) {
+        *dataBuffer           = IOMalloc(header->dwLength);
+        if (dataBuffer == NULL) return kIOReturnVMError;
+        
+        *dataBufferSize       = header->dwLength;
+        request.bRequest      = bRequest;
+        request.wValue        = interfaceNumber;
+        request.wLength       = header->dwLength;
+        request.wIndex        = DescriptorType;
+        //If requesting for an interface, we have a different bmRequestType
+        if (interfaceNumber > 0) {
+            request.bmRequestType = 0xC1;
         } else {
             request.bmRequestType = 0xC0;
         }
-        if (DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID){ // If it's MS_OS_10_REQUEST_EXTENDED_COMPATID
-            request.wValue         = 0;                            //    we request DeviceWide
-            request.wLength        = 0x28;                         //    and it only takes 40 bytes
-           *dataBufferSize         = 0x28;
-        } else {                                                   // If it's MS_OS_10_REQUEST_EXTENDED_PROPERTIES
-            request.wValue         = interfaceNumber;              //    we specify the interface (if one is requested) in the low
-                                                                   //    bytes and the page number in the high bytes.
-                                                                   //    Since we're just getting the header, high=0 so we just put
-                                                                   //    the interface number in USB order.
-            request.wLength   = 0x10;                              //    The actual request will be made later.
-           *dataBufferSize    = 0x10;
-        }
-        
-        
-        *dataBuffer = IOMalloc(request.wLength);
-        
-        if (dataBuffer == NULL)
-            return kIOReturnVMError;
-        
-        IOReturn status = device->deviceRequest(this, request, *dataBuffer, *dataBufferSize, kUSBHostStandardRequestCompletionTimeout);
-        
-        if(status != kIOReturnSuccess)
-            return status;
 
-        // The CompatID descriptor is a single request of known size so we can finish here
-        // It's clear that below we're talking about Extended Properties
-        if (DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID)
-            return kIOReturnSuccess;
-
-        // We can cast the variable like this regardless of the actual descriptor type
-        // since both descriptors get transferred the same way and they both provide the
-        // much needed dwLength.
+        status = device->deviceRequest(this, request, *dataBuffer, *dataBufferSize, kUSBHostStandardRequestCompletionTimeout);
+        return kIOReturnSuccess;
         
-        MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER *header = (MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER*) *dataBuffer;
-
-        //If the descriptor is smaller than 4K we'll get it in one shot
-        //It should be 4K-sizeof(usbTransferHeader)
-        if (header->dwLength <= 0x1000) {
-            *dataBuffer           = IOMalloc(header->dwLength);
-            *dataBufferSize       = header->dwLength;
+    //If it's bigger than 4K, we need to make paged transfers.
+    } else {
+                    
+        uint32_t   bytesTransferred   = 0;
+        uint32_t   remainingBytes     = header->dwLength;
+                  *dataBuffer         = IOMalloc(header->dwLength);
+                  *dataBufferSize     = header->dwLength;
+        uint8_t   *iterator           = (uint8_t*)*dataBuffer;
+        void      *tempBuffer         = NULL;
+                    
+        if (dataBuffer == NULL) return kIOReturnVMError;
+                    
+        while (remainingBytes > 0) {
+            
+            //High Bytes are interfaceNumber, low bytes are page number (bytes DIV pagesize +1)
+            request.wValue        = interfaceNumber|((remainingBytes % 0x1000 + 1) << 8);
             request.bRequest      = bRequest;
-            request.wValue        = interfaceNumber;
-            request.wLength       = header->dwLength;
             request.wIndex        = DescriptorType;
+                
+            //Let's request at most the remaining number of bytes
+            if(remainingBytes > 0x1000) {
+                request.wLength   = 0x1000;
+            } else {
+                request.wLength   = remainingBytes;
+            }
             //If requesting for an interface, we have a different bmRequestType
             if (interfaceNumber > 0) {
                 request.bmRequestType = 0xC1;
             } else {
                 request.bmRequestType = 0xC0;
             }
+                
+            status = device->deviceRequest(this, request, tempBuffer, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
+            //
+            // TODO: Should we transfer everything after the header or do the later pages exclude the header?
+            //
+            if (status==kIOReturnSuccess) memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
+                    remainingBytes -= (bytesTransferred-sizeof(StandardUSB::Descriptor));
+        }
 
-            status = device->deviceRequest(this, request, *dataBuffer, *dataBufferSize, kUSBHostStandardRequestCompletionTimeout);
-            return kIOReturnSuccess;
-                    
-        //If it's bigger than 4K, we need to make paged transfers.
-        } else {
-                    
-            uint32_t   bytesTransferred   = 0;
-            uint32_t   remainingBytes     = header->dwLength;
-                      *dataBuffer         = IOMalloc(header->dwLength);
-                      *dataBufferSize     = header->dwLength;
-            uint8_t   *iterator           = (uint8_t*)*dataBuffer;
-            void      *tempBuffer         = NULL;
-                    
-            if (dataBuffer == NULL) return kIOReturnVMError;
-                    
-            while (remainingBytes > 0) {
-                
-                //High Bytes are interfaceNumber, low bytes are page number (bytes DIV pagesize +1)
-                request.wValue        = interfaceNumber|((remainingBytes % 0x1000 + 1) << 8);
-                request.bRequest      = bRequest;
-                request.wIndex        = DescriptorType;
-                
-                //Let's request at most the remaining number of bytes
-                if(remainingBytes > 0x1000) {
-                    request.wLength   = 0x1000;
-                } else {
-                    request.wLength   = remainingBytes;
-                }
-                //If requesting for an interface, we have a different bmRequestType
-                if (interfaceNumber > 0) {
-                    request.bmRequestType = 0xC1;
-                } else {
-                    request.bmRequestType = 0xC0;
-                }
-                
-                status = device->deviceRequest(this, request, tempBuffer, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
-                //
-                // TODO: Should we transfer everything after the header or do the later pages exclude the header?
-                //
-                if (status==kIOReturnSuccess) memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
-                        remainingBytes -= (bytesTransferred-sizeof(StandardUSB::Descriptor));
-            }
-
-            return kIOReturnSuccess;
-        }//else
-        
-    } else return kIOReturnNotFound;//Cookie not found
+        return kIOReturnSuccess;
+    }//else
     
 }
 
