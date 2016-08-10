@@ -27,7 +27,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         //Get exclusive access to the USB device
         device->open(this);
         
-#ifdef DEBUG
         //Let's find out a few things about this device.
         //First: The number of configurations
         uint8_t configNumber  = 0;
@@ -39,13 +38,13 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         request.wLength       = sizeof(configNumber);
         uint32_t bytesTransferred = 0;
         device->deviceRequest(this, request, &configNumber, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
-        
+#ifdef DEBUG
         //And then, the idVendor, idProduct, etc.
-        IOLog("-%s[%p]::probe We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", getName(), this, USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), configNumber);
+        log("We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), configNumber);
 #endif
         /* 
          * PRE:  There is a MSFT100 descriptor on device.
-         * POST: Device is microsoft. Handle as MS device.
+         * POST: Device is Microsoft. Handle as MS device.
          */
         uint8_t cookie;
         if (checkMsOsDescriptor(device, &cookie) == kIOReturnSuccess){
@@ -53,76 +52,73 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
             // TODO Set the current configuration again. It might go away otherwise
             void     *dataBuffer;
             uint32_t  dataBufferSize;
-#ifdef DEBUG
-            IOLog("-%s[%p]::%s We have a MSFT100 descriptor with cookie %x. We're now getting the COMPATID descriptor\n", getName(), this, __FUNCTION__, cookie);
-#endif
+            log("We have a MSFT100 descriptor with cookie %x. We're now getting the COMPATID descriptor\n", cookie);
+
             
             // Read the MS OS Compat Descriptor v1
             // dataBuffer and dataBufferSize set in callee
             status = getMsDescriptor(device, cookie, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
             if (status != kIOReturnSuccess) {
-                IOLog("-%s[%p]::%s We couldn't get the MS_OS_10_REQUEST_EXTENDED_COMPATID descriptor with error: %x\n", getName(), this, __FUNCTION__, status);
+                log("We couldn't get the MS_OS_10_REQUEST_EXTENDED_COMPATID descriptor with error: %x\n", status);
                 device->close(this);
                 return NULL;
             }
             
-            IOLog("-%s[%p]::%s We actually succeeded in getting MS_OS_10_REQUEST_EXTENDED_COMPATID\n", getName(), this, __FUNCTION__);
-            device->close(this);
-            return NULL;
+            log("We actually succeeded in getting MS_OS_10_REQUEST_EXTENDED_COMPATID\n");
             
-            // First 18 bytes are USB header. Data at byte 19
-            uint64_t descriptorData = *((uint64_t*)dataBuffer + 18);
-            uint64_t subDescriptorData = *((uint64_t*)dataBuffer + 18 + 8);
+            uint64_t descriptorData = **(uint64_t**)((uint8_t*)dataBuffer + 24);
+            uint64_t subDescriptorData = *(&descriptorData + 1);
             
             //Now let's act upon the descriptor.
             switch (descriptorData){
                 case 0:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: Null Compatible ID\n", getName(), this);
+                    log("MS Compatible Descriptor: Null Compatible ID\n");
                     break;
                 case MS_OS_10_RNDIS_COMPATIBLE_ID:
                     //Let's also look for something else before we
                     //PublishRNDISConfiguration(device);
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: RNDIS\n", getName(), this);
+                    log("MS Compatible Descriptor: RNDIS\n");
                     break;
                 case MS_OS_10_MTP_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MTP\n", getName(), this);
+                    log("MS Compatible Descriptor: MTP\n");
                     break;
                 case MS_OS_10_PTP_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: PTP\n", getName(), this);
+                    log("MS Compatible Descriptor: PTP\n");
                     break;
                 case MS_OS_10_WINUSB_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: WINUSB\n", getName(), this);
+                    log("MS Compatible Descriptor: WINUSB\n");
                     break;
                 case MS_OS_10_XUSB20_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: X USB 2.0\n", getName(), this);
+                    log("MS Compatible Descriptor: X USB 2.0\n");
                     break;
                 case MS_OS_10_MBIM_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MBIM on default config.\n", getName(), this);
-                    //setconfig(currentConfig);
+                    log("MS Compatible Descriptor: MBIM on default config.\n");
+                    //Let's pointlessly switch to the current config.
+                    status=device->setConfiguration(configNumber, true);
                     //PublishMBIMConfiguration(device)
                     IOFree(dataBuffer, dataBufferSize);
                     device->close(this);
                     return NULL;
                 case MS_OS_10_ALTRCFG_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: MBIM", getName(), this);
+                    log("MS Compatible Descriptor: MBIM");
                     switch (subDescriptorData){
                         case MS_OS_10_ALT2_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 2");
-                            //setconfig(2);
+                            log_cont(" on config 2");
+                            status=device->setConfiguration(2, true);
                             //PublishMBIMConfiguration(device);
                             break;
                         case MS_OS_10_ALT3_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 3");
-                            //setconfig(3);
+                            log_cont(" on config 3");
+                            status=device->setConfiguration(3, true);
                             //PublishMBIMConfiguration(device);
                             break;
                         case MS_OS_10_ALT4_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 4");
-                            //setconfig(4);
+                            log_cont(" on config 4");
+                            status=device->setConfiguration(4, true);
                             //PublishMBIMConfiguration(device);
                             break;
                         default:
-                            IOLog(" incorrect Subcompatible descriptor\n");
+                            log_cont(" incorrect Subcompatible descriptor\n");
                             break;
                     }
                     IOFree(dataBuffer, dataBufferSize);
@@ -130,32 +126,32 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     return NULL;
                     break;
                 case MS_OS_10_CDC_WMC_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: CDC-WMC on default config.\n", getName(), this);
-                    //setconfig(currentConfig);
+                    log_cont("MS Compatible Descriptor: CDC-WMC on default config.\n");
+                    status=device->setConfiguration(configNumber, true);
                     //PublishWMCConfiguration(device)
                     IOFree(dataBuffer, dataBufferSize);
                     device->close(this);
                     return NULL;
                 case MS_OS_10_WMCALTR_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe MS Compatible Descriptor: CDC-WMC", getName(), this);
+                    log("MS Compatible Descriptor: CDC-WMC");
                     switch (subDescriptorData){
                         case MS_OS_10_ALT2_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 2");
-                            //setconfig(2);
+                            log_cont(" on config 2\n");
+                            status=device->setConfiguration(2, true);
                             //PublishWMCConfiguration(device);
                             break;
                         case MS_OS_10_ALT3_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 3");
-                            //setconfig(3);
+                            log_cont(" on config 3\n");
+                            status=device->setConfiguration(3, true);
                             //PublishWMCConfiguration(device);
                             break;
                         case MS_OS_10_ALT4_SUBCOMPATIBLE_ID:
-                            IOLog(" on config 4");
-                            //setconfig(4);
+                            log_cont(" on config 4\n");
+                            status=device->setConfiguration(4, true);
                             //PublishWMCConfiguration(device);
                             break;
                         default:
-                            IOLog(" with incorrect Subcompatible descriptor\n");
+                            log_cont(" with illegal Subcompatible descriptor\n");
                             break;
                     }
                     IOFree(dataBuffer, dataBufferSize);
@@ -163,26 +159,26 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
                     return NULL;
                     break;
                 case MS_OS_10_BLUTUTH_COMPATIBLE_ID:
-                    IOLog("-%s[%p]::probe Bluetooth", getName(), this);
-                    switch (descriptorData) {
+                    log("Bluetooth");
+                    switch (subDescriptorData) {
                         case MS_OS_10_NULL_SUBCOMPATIBLE_ID:
-                            IOLog(" incorrect Subcompatible descriptor\n");
+                            log_cont(" incorrect Subcompatible descriptor\n");
                             break;
                         case MS_OS_10_BT11_SUBCOMPATIBLE_ID:
-                            IOLog(" v1.1\n");
+                            log_cont(" v1.1\n");
                             break;
                         case MS_OS_10_BT12_SUBCOMPATIBLE_ID:
-                            IOLog(" v1.2\n");
+                            log_cont(" v1.2\n");
                             break;
                         case MS_OS_10_EDR2_SUBCOMPATIBLE_ID:
-                            IOLog(" v2.0+EDR\n");
+                            log_cont(" v2.0+EDR\n");
                             break;
                         default:
-                            IOLog(" with incorrect Subcompatible descriptor\n");
+                            log(" with illegal Subcompatible descriptor\n");
                             break;
                     }
                 default:
-                    IOLog("-%s[%p]::probe Incorrect Compatible descriptor\n", getName(), this);
+                    log("Illegal Compatible descriptor: %llx. Subcompatible: %llx \n", descriptorData, subDescriptorData);
                     break;
             } //switch(descriptorData)
 
@@ -219,7 +215,7 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
     IOReturn kernelError = device->deviceRequest(this, request, (void *)msftString, bytesTransferred, kUSBHostDefaultControlCompletionTimeoutMS);
     
     if (kernelError){
-        IOLog("-%s[%p]::%s: Couldn't get the MSFT100 descriptor, transferred %d bytes: %x\n",getName(), this, __FUNCTION__, bytesTransferred, kernelError);
+        log("Couldn't get the MSFT100 descriptor, transferred %d bytes: %x\n", bytesTransferred, kernelError);
         IOFree(msftString, msftStringSize);
         return kIOReturnNotFound;
     }
@@ -236,17 +232,15 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
     // FIXME: Also check  && msftString->bLength > StandardUSB::kDescriptorSize
     //
     if (msftString != NULL){
-        IOLog("-%s[%p]::%s: found\n", getName(), this, __FUNCTION__);
-        
         if((*highBytesString==MS_OS_SIGNATURE_REF_STRING_1) &&
            (*medBytesString ==MS_OS_SIGNATURE_REF_STRING_2) &&
            (*lowBytesString ==MS_OS_SIGNATURE_REF_STRING_3)) {
-            IOLog("-%s[%p]::%s: We have a confirmed MSFT100 Descriptor\n", getName(), this, __FUNCTION__);
+            log("We have a confirmed MSFT100 Descriptor\n");
             IOFree(msftString, msftStringSize);
             return kIOReturnSuccess;
         }
     }
-    IOLog("-%s[%p]::%s: MSFT100 was not found\n", getName(), this, __FUNCTION__);
+    log("MSFT100 was not found\n");
     IOFree(msftString, msftStringSize);
     return kIOReturnNotFound;
 }
@@ -258,16 +252,16 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
 //
 IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cookie, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
     // First input validation:
-    // We can only request COMPATID descriptor device-wide
+    // We can only request the COMPATID descriptor device-wide
     if (interfaceNumber > 0 && DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID){
-        IOLog("-%s[%p]::getMsDescriptor Can only request Extended CompatID Device-wide\n", getName(), this);
+        log("Can only request Extended CompatID Device-wide\n");
         return kIOReturnBadArgument;
     }
     // Second input validation:
-    // We can only request COMPATID or Extended Properties.
+    // We can only request the COMPATID or Extended Properties.
     // Genre is not supported/documented by Microsoft. It just is.
     if (!(DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID || DescriptorType == MS_OS_10_REQUEST_EXTENDED_PROPERTIES)){
-        IOLog("-%s[%p]::%s Unknown Microsoft Descriptor: %00000x\n", getName(), this, __FUNCTION__, DescriptorType);
+        log("Unknown Microsoft Descriptor Type. Check Endianness: %00000x\n", DescriptorType);
         return kIOReturnBadArgument;
     }
 
@@ -281,49 +275,51 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
     }
     
     // We first request the header to figure out the length of data to expect (probably 0x28)
-    
+    // FIXME: interfacenumber only 8 bits long in the low bytes of wValue
     request.wValue         = interfaceNumber;
     request.wLength        = 0x10;
     
     void* interimDataBuffer = IOMalloc(request.wLength);
     
     if (interimDataBuffer == NULL) {
-        IOLog("-%s[%p]::%s VM Error.\n", getName(), this, __FUNCTION__);
+        log("VM Allocation Error.\n");
         return kIOReturnVMError;
     }
     
 #ifdef DEBUG
-    IOLog("-%s[%p]::%s Making the request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", getName(), this, __FUNCTION__, request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
+    log("Making the request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
 #endif
-    
-    IOReturn status = device->deviceRequest(this, request, interimDataBuffer, *dataBufferSize, kUSBHostStandardRequestCompletionTimeout);
+    uint32_t bytesTransfered;
+    IOReturn status = device->deviceRequest(this, request, interimDataBuffer, bytesTransfered, kUSBHostStandardRequestCompletionTimeout);
     if(status != kIOReturnSuccess) {
-        IOLog("-%s[%p]::%s Could not perform request Extended CompatID: %x\n", getName(), this, __FUNCTION__, status);
-        IOSleep(10000);
+        log("Could not perform request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransfered);
         IOFree(interimDataBuffer, 0x10);
         return status;
     }
+    log("Performed request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransfered);
     
     // We can cast the variable like this regardless of the actual descriptor type
     // since both descriptors get transferred the same way and they both provide the
     // much needed dwLength.
     
-    MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER *header = (MS_OS_10_EXTENDED_PROPERTIES_DESCRIPTOR_HEADER*) interimDataBuffer;
+    MS_OS_10_EXTENDED_COMPAT_DESCRIPTOR_HEADER *header = (MS_OS_10_EXTENDED_COMPAT_DESCRIPTOR_HEADER*) interimDataBuffer;
     
-    IOLog("-%s[%p]::%s Header bits: dwLength: %x bcdVersion: %x wIndex: %x wCount: %x\n", getName(), this, __FUNCTION__, header->dwLength, header->bcdVersion, header->wIndex, header->wCount);
+    log("Header bits: dwLength: %x bcdVersion: %x wIndex: %x bCount: %x\n", header->dwLength, header->bcdVersion, header->wIndex, header->bCount);
 
-    //If the descriptor is smaller than 4K we'll get it in one shot
-    //It should be 4K-sizeof(usbTransferHeader)
-    if (header->dwLength <= 0x1000) {
+    // If the descriptor is smaller than 4K we'll get it in one shot
+    // It might actually be 4K - StandardUSB::kDescriptorSize but
+    // only Redmond might be able to explain this to us.
+    uint16_t transferSize = USBToHost16(header->dwLength);
+    if (transferSize <= 0x1000) {
         *dataBuffer = IOMalloc(header->dwLength);
-        if (dataBuffer == NULL) {
-            IOLog("-%s[%p]::%s VM Error.\n", getName(), this, __FUNCTION__);
+        if (*dataBuffer == NULL) {
+            log("VM Error.\n");
             return kIOReturnVMError;
         }
         
         request.bRequest      = cookie;
         request.wValue        = interfaceNumber;
-        request.wLength       = header->dwLength;
+        request.wLength       = HostToUSB16(transferSize);
         request.wIndex        = DescriptorType;
         //If requesting for an interface, we have a different bmRequestType
         if (interfaceNumber > 0) {
@@ -331,9 +327,24 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
         } else {
             request.bmRequestType = 0xC0;
         }
-
-        status = device->deviceRequest(this, request, *dataBuffer, header->dwLength, kUSBHostStandardRequestCompletionTimeout);
-        IOLog("-%s[%p]::%s Performed 2nd request with status: %x\n", getName(), this, __FUNCTION__, status);
+#ifdef DEBUG
+        log("Making the 2nd request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
+#endif
+        
+        status = device->deviceRequest(this, request, *dataBuffer, bytesTransfered, kUSBHostVendorRequestCompletionTimeout);
+        if(status){
+            log("Request failed: %x, %x bytes transfered\n", status, bytesTransfered);
+            header = NULL;
+            IOFree(interimDataBuffer, 0x10);
+            return status;
+        }
+        log("Performed 2nd request with status: %x\n", status);
+        
+        log("Content is ");
+        for (int i=0; i < header->dwLength; i++){
+            log_cont("0x%0x ", (*(uint8_t**)dataBuffer)[i]);
+        }
+        log_cont("\n");
         IOSleep(10000);
         
         header = NULL;
@@ -343,46 +354,44 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
         
     //If it's bigger than 4K, we need to make paged transfers.
     } else {
-        IOLog("-%s[%p]::%s Don't know how to transfer: %x bytes\n", getName(), this, __FUNCTION__, header->dwLength);
-        return kIOReturnBadArgument;
-//        uint32_t   bytesTransferred   = 0;
-//        uint32_t   remainingBytes     = header->dwLength;
-//                  *dataBuffer         = IOMalloc(header->dwLength);
-//                  *dataBufferSize     = header->dwLength;
-//        uint8_t   *iterator           = (uint8_t*)*dataBuffer;
-//        void      *tempBuffer         = NULL;
-//                    
-//        if (dataBuffer == NULL) return kIOReturnVMError;
-//                    
-//        while (remainingBytes > 0) {
-//            
-//            //High Bytes are interfaceNumber, low bytes are page number (bytes DIV pagesize +1)
-//            request.wValue        = interfaceNumber|((remainingBytes % 0x1000 + 1) << 8);
-//            request.bRequest      = cookie;
-//            request.wIndex        = DescriptorType;
-//                
-//            //Let's request at most the remaining number of bytes
-//            if(remainingBytes > 0x1000) {
-//                request.wLength   = 0x1000;
-//            } else {
-//                request.wLength   = remainingBytes;
-//            }
-//            //If requesting for an interface, we have a different bmRequestType
-//            if (interfaceNumber > 0) {
-//                request.bmRequestType = 0xC1;
-//            } else {
-//                request.bmRequestType = 0xC0;
-//            }
-//                
-//            status = device->deviceRequest(this, request, tempBuffer, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
-//            //
-//            // TODO: Should we transfer everything after the header or do the later pages exclude the header?
-//            //
-//            if (status==kIOReturnSuccess) memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
-//                    remainingBytes -= (bytesTransferred-sizeof(StandardUSB::Descriptor));
-//        }
-//
-//        return kIOReturnSuccess;
+        uint32_t   bytesTransferred   = 0;
+        uint32_t   remainingBytes     = header->dwLength;
+                  *dataBuffer         = IOMalloc(header->dwLength);
+                  *dataBufferSize     = header->dwLength;
+        uint8_t   *iterator           = (uint8_t*)*dataBuffer;
+        void      *tempBuffer         = NULL;
+                    
+        if (dataBuffer == NULL) return kIOReturnVMError;
+                    
+        while (remainingBytes > 0) {
+            
+            //High Bytes are interfaceNumber, low bytes are page number (bytes DIV pagesize +1)
+            request.wValue        = interfaceNumber|((remainingBytes % 0x1000 + 1) << 8);
+            request.bRequest      = cookie;
+            request.wIndex        = DescriptorType;
+                
+            //Let's request at most the remaining number of bytes
+            if(remainingBytes > 0x1000) {
+                request.wLength   = 0x1000;
+            } else {
+                request.wLength   = remainingBytes;
+            }
+            //If requesting for an interface, we have a different bmRequestType
+            if (interfaceNumber > 0) {
+                request.bmRequestType = 0xC1;
+            } else {
+                request.bmRequestType = 0xC0;
+            }
+                
+            status = device->deviceRequest(this, request, tempBuffer, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
+            //
+            // TODO: Should we transfer everything after the header or do the later pages exclude the header?
+            //
+            if (status==kIOReturnSuccess) memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
+                    remainingBytes -= (bytesTransferred-sizeof(StandardUSB::Descriptor));
+        }
+
+        return kIOReturnSuccess;
     }//else
     
 }
@@ -394,10 +403,10 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
 bool MBIMProbe::start(IOService *provider){
 	bool ret;
 	   
-	IOLog("-%s[%p]::start - This is handled by the superclass\n", getName(), this);
+	log("This is handled by the superclass\n");
 	ret = super::start(provider);
 	if (!ret){
-		IOLog("-%s[%p]::start -  super::start failed\n", getName(), this);
+		log("super::start failed\n");
 	}
 	
 	return ret;
@@ -409,7 +418,7 @@ bool MBIMProbe::start(IOService *provider){
 //
 void MBIMProbe::stop(IOService *provider){
     
-    IOLog("-%s[%p]::stop - calling super::stop\n", getName(), this);
+    log("calling super::stop\n");
     super::stop(provider);
 }
 
@@ -420,7 +429,7 @@ void MBIMProbe::stop(IOService *provider){
 bool MBIMProbe::init(OSDictionary *properties){
     if (super::init(properties) == false)
     {
-        IOLog("-%s[%p]::init - initialize super failed\n", getName(), this);
+        log("initialize super failed\n");
         return false;
     }
     return true;

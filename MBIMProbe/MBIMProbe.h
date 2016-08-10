@@ -19,6 +19,14 @@
 #include <IOKit/usb/IOUSBHostInterface.h>
 #include <sys/_endian.h>
 
+#ifdef DEBUG
+#define log(x, ...)  IOLog("%s::%s " x , getName(), __FUNCTION__, ##__VA_ARGS__)
+#define log_cont(x, ...)  IOLog( x, ##__VA_ARGS__)
+#else
+#define log(x, ...)
+#define log_cont(x, ...)
+#endif
+
 class MBIMProbe : public IOService
 {
 
