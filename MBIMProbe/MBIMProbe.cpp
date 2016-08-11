@@ -3,7 +3,10 @@
 //  MBIMProbe
 //
 //  Created by Răzvan Corneliu C.R. VILT on 30.04.2014.
-//  Copyright © 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
+//  Copyright © 2016:
+//        Răzvan Corneliu C.R. VILT
+//        Vlad A. VERGU
+//  All rights reserved.
 //
 
 
