@@ -76,6 +76,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     return 0;
     
     configNumber = parseMSDescriptor(dataBuffer, configNumber);
+    IOFree(dataBuffer, dataBufferSize);
+    
     if(configNumber < 0) {
         log("Failed to discover a valid configuration\n");
         if(device->isOpen()){
@@ -83,8 +85,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         }
         return this;
     }
-    IOFree(dataBuffer, dataBufferSize);
-    
     log("Activating configuration: %x\n", configNumber);
     status = device->setConfiguration(configNumber, true);
     if(device->isOpen()) {
@@ -98,6 +98,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     return this;
     
 }
+
+
 
 uint8_t MBIMProbe::discoverDevice(IOUSBHostDevice *device) {
     //Let's find out a few things about this device.
@@ -117,6 +119,7 @@ uint8_t MBIMProbe::discoverDevice(IOUSBHostDevice *device) {
 #endif
     return configNumber;
 }
+
 
 
 //
@@ -173,6 +176,7 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
 }
 
 
+
 IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
 
     // First input validation:
@@ -207,9 +211,16 @@ IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie
     uint32_t transferSize;
     status = device->deviceRequest(this, request, *dataBuffer, transferSize, kUSBHostStandardRequestCompletionTimeout);
     log("Performed request with status: %x. Transferred %x bytes.\n", status, transferSize);
+    
+    log("Content is ");
+    for (int i=0; i < 0x28; i++){
+        log_cont("0x%0x ", *( ( (uint8_t*) *dataBuffer) + i) );
+    }
+    log_cont("\n");
 
     return status;
 }
+
 
 
 //
@@ -365,10 +376,13 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
     
 }
 
+
+
+
 uint8_t MBIMProbe::parseMSDescriptor(void *dataBuffer, uint8_t currentConfigNumber) {
     uint8_t nextConfigNumber = -1;
     
-    uint64_t descriptorData = **(uint64_t**)((uint8_t*) dataBuffer + 24);
+    uint64_t descriptorData = **(uint64_t**)((uint8_t*) dataBuffer + sizeof(MS_OS_10_EXTENDED_COMPAT_DESCRIPTOR_HEADER));
     uint64_t subDescriptorData = *(&descriptorData + 1);
     
     //Now let's act upon the descriptor.
@@ -476,6 +490,8 @@ uint8_t MBIMProbe::parseMSDescriptor(void *dataBuffer, uint8_t currentConfigNumb
     return nextConfigNumber;
 }
 
+
+
 //
 // Just call the superclass to do the starting
 //
@@ -492,6 +508,7 @@ bool MBIMProbe::start(IOService *provider){
 }
 
 
+
 //
 // Just call the superclass to do the stoping
 //
@@ -500,6 +517,7 @@ void MBIMProbe::stop(IOService *provider){
     log("calling super::stop\n");
     super::stop(provider);
 }
+
 
 
 //
@@ -513,6 +531,7 @@ bool MBIMProbe::init(OSDictionary *properties){
     }
     return true;
 }
+
 
 
 //
