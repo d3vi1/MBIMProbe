@@ -39,6 +39,20 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     
     uint8_t configNumber  = discoverDevice(device);
     
+    log("Looking for MBIM config\n");
+    
+    uint8_t mbimConfigNumber = findMBIMBConfig(device);
+    
+    log("Found MBIM config at %x. Activating configuration.\n", mbimConfigNumber);
+    
+    device->setConfiguration(mbimConfigNumber, true);
+    
+    configNumber = discoverDevice(device);
+    log("Device is now at config %x\n", configNumber);
+    
+    device->close(this);
+    return this;
+    
     /*
      * PRE:  There is a MSFT100 descriptor on device.
      * POST: Device is Microsoft. Handle as MS device.
@@ -376,38 +390,45 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
     
 }
 
-//
-//uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
-//    
-//    const IOUSBDeviceDescriptor *device_descriptor = (IOUSBDeviceDescriptor *) device->getDeviceDescriptor();
-//    IOLog("-%s[%p]::%s @0 \n", getName(), this, __FUNCTION__);
-//    
-//    for(int j = 0; j < device_descriptor->bNumConfigurations; j++){
-//        IOLog("-%s[%p]::%s @1 \n", getName(), this, __FUNCTION__);
-//        const ConfigurationDescriptor *config = device->getConfigurationDescriptor(j);
+
+uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
+    
+    const IOUSBDeviceDescriptor *device_descriptor = (IOUSBDeviceDescriptor *) device->getDeviceDescriptor();
+    IOLog("-%s[%p]::%s @0 \n", getName(), this, __FUNCTION__);
+    
+    for(int j = 0; j < device_descriptor->bNumConfigurations; j++){
+        IOLog("-%s[%p]::%s @1 \n", getName(), this, __FUNCTION__);
+        
+        uint8_t currentConfig = discoverDevice(device);
+        log("@1a currentConfig %x\n", currentConfig);
+        
+        const ConfigurationDescriptor *config = device->getConfigurationDescriptor(j);
 //        const IOUSBConfigurationDescriptor *usb_config = (IOUSBConfigurationDescriptor*) config;
-//        
-//        if(config == NULL){
-//            IOLog("-%s[%p]::%s Could not get getConfigurationDescriptor: %x\n", getName(), this, __FUNCTION__, j);
-//            continue;
-//        }
-//        IOLog("-%s[%p]::%s @2: at configuration %x\n", getName(), this, __FUNCTION__, j);
-//        
-//        const InterfaceDescriptor *interface_descriptor;
-//        do {
-//            interface_descriptor = getNextInterfaceDescriptor(config, interface_descriptor);
-//            if(interface_descriptor != NULL) {
-//                IOLog("-%s[%p]::%s @3 got an iface descriptor class %x subclass %x\n", getName(), this, __FUNCTION__, interface_descriptor->bInterfaceClass, interface_descriptor->bInterfaceSubClass);
-//                if(interface_descriptor->bInterfaceClass == 2 && interface_descriptor->bInterfaceSubClass == 0x0e) {
-//                    // found MBIM configuration
-//                    return config->bConfigurationValue;;
-//                }
-//            }
-//        } while(interface_descriptor != NULL);
-//    }
-//    return NULL;
-//}
-//
+        
+        currentConfig = discoverDevice(device);
+        log("@1b currentConfig %x\n", currentConfig);
+        
+        if(config == NULL){
+            IOLog("-%s[%p]::%s Could not get getConfigurationDescriptor: %x\n", getName(), this, __FUNCTION__, j);
+            continue;
+        }
+        IOLog("-%s[%p]::%s @2: at configuration %x\n", getName(), this, __FUNCTION__, j);
+        
+        const InterfaceDescriptor *interface_descriptor;
+        do {
+            interface_descriptor = getNextInterfaceDescriptor(config, interface_descriptor);
+            if(interface_descriptor != NULL) {
+                IOLog("-%s[%p]::%s @3 got an iface descriptor class %x subclass %x\n", getName(), this, __FUNCTION__, interface_descriptor->bInterfaceClass, interface_descriptor->bInterfaceSubClass);
+                if(interface_descriptor->bInterfaceClass == 2 && interface_descriptor->bInterfaceSubClass == 0x0e) {
+                    // found MBIM configuration
+                    return config->bConfigurationValue;;
+                }
+            }
+        } while(interface_descriptor != NULL);
+    }
+    return NULL;
+}
+
 
 
 

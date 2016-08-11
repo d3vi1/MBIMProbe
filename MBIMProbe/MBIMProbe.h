@@ -16,8 +16,8 @@
 #include "MSOSDescriptorV2.h"
 #include "3GModems.h"
 #include <IOKit/IOKitKeys.h>
-//#include <IOKit/usb/USB.h>
-//#include <IOKit/usb/StandardUSB.h>
+#include <IOKit/usb/USB.h>
+#include <IOKit/usb/StandardUSB.h>
 #include <IOKit/usb/IOUSBHostDevice.h>
 #include <IOKit/usb/IOUSBHostInterface.h>
 #include <sys/_endian.h>
@@ -52,6 +52,7 @@ private:
                                                       void **dataBuffer,
                                                       uint32_t *dataBufferSize);
     virtual uint8_t     parseMSDescriptor            (void *dataBuffer, uint8_t currentConfigNumber);
+    virtual uint8_t     findMBIMBConfig              (IOUSBHostDevice *device);
 public:
     IOUSBHostDevice	   *fpDevice;
     virtual bool        init(OSDictionary *properties = 0);
