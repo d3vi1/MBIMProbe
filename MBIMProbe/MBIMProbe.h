@@ -39,6 +39,12 @@ private:
     virtual uint8_t     discoverDevice               (IOUSBHostDevice *device);
     virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device,
                                                       uint8_t *cookie);
+    virtual IOReturn   getSmallMsDescriptor          (IOUSBHostDevice *device,
+                                                      uint8_t cookie,
+                                                      uint16_t interfaceNumber,
+                                                      const uint16_t DescriptorType,
+                                                      void **dataBuffer,
+                                                      uint32_t *dataBufferSize);
     virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device,
                                                       uint8_t cookie,
                                                       uint16_t interfaceNumber,

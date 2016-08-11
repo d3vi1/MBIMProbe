@@ -54,14 +54,15 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     }
     
     log("We have a MSFT100 descriptor with cookie %x. We're now getting the COMPATID descriptor\n", cookie);
+    
     // TODO Set the current configuration again. It might go away otherwise
     void     *dataBuffer;
     uint32_t  dataBufferSize;
     
-    
     // Read the MS OS Compat Descriptor v1
     // dataBuffer and dataBufferSize set in callee
-    status = getMsDescriptor(device, cookie, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
+    status = getSmallMsDescriptor(device, cookie, 0, MS_OS_10_REQUEST_EXTENDED_COMPATID, &dataBuffer, &dataBufferSize);
+    
     if (status != kIOReturnSuccess) {
         log("We couldn't get the MS_OS_10_REQUEST_EXTENDED_COMPATID descriptor with error: %x\n", status);
         if(device->isOpen()){
@@ -71,6 +72,8 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     }
     
     log("We succeeded in getting MS_OS_10_REQUEST_EXTENDED_COMPATID\n");
+    // FIXME this shouldn't return here, but it does because of a segfault down below
+    return 0;
     
     configNumber = parseMSDescriptor(dataBuffer, configNumber);
     if(configNumber < 0) {
@@ -170,6 +173,45 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
 }
 
 
+IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
+
+    // First input validation:
+    // We can only request COMPATID descriptor device-wide
+    if (interfaceNumber > 0 && DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID){
+        log("Can only request Extended CompatID Device-wide\n");
+        return kIOReturnBadArgument;
+    }
+    // Second input validation:
+    // We can only request COMPATID or Extended Properties.
+    // Genre is not supported/documented by Microsoft. It just is.
+    if (!(DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID || DescriptorType == MS_OS_10_REQUEST_EXTENDED_PROPERTIES)){
+        log("Unknown Microsoft Descriptor: %00000x\n", DescriptorType);
+        return kIOReturnBadArgument;
+    }
+
+    DeviceRequest request;
+
+    *dataBuffer = IOMalloc(0x28);
+    *dataBufferSize = 0x28;
+    request.bmRequestType = 0xC0;
+    request.bRequest = cookie;
+    request.wIndex = DescriptorType;
+    request.wValue = interfaceNumber;
+    request.wLength = 0x28;
+
+
+#ifdef DEBUG
+    log("Making the request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
+#endif
+    IOReturn status;
+    uint32_t transferSize;
+    status = device->deviceRequest(this, request, *dataBuffer, transferSize, kUSBHostStandardRequestCompletionTimeout);
+    log("Performed request with status: %x. Transferred %x bytes.\n", status, transferSize);
+
+    return status;
+}
+
+
 //
 // Gets an MS OS Descriptor V1 for the Device if interface is NULL
 // or for the Interface if an interface number is specified.
@@ -188,6 +230,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
         log("Unknown Microsoft Descriptor Type. Check Endianness: %00000x\n", DescriptorType);
         return kIOReturnBadArgument;
     }
+    uint32_t bytesTransferred = 0;
     
     DeviceRequest                request;
     request.bRequest           = cookie;                      // I can't explain why it's declared as single byte.
@@ -213,14 +256,13 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
 #ifdef DEBUG
     log("Making the request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
 #endif
-    uint32_t bytesTransfered;
-    IOReturn status = device->deviceRequest(this, request, interimDataBuffer, bytesTransfered, kUSBHostStandardRequestCompletionTimeout);
+    IOReturn status = device->deviceRequest(this, request, interimDataBuffer, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
     if(status != kIOReturnSuccess) {
-        log("Could not perform request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransfered);
+        log("Could not perform request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransferred);
         IOFree(interimDataBuffer, 0x10);
         return status;
     }
-    log("Performed request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransfered);
+    log("Performed request Extended CompatID: %x, %x bytes transfered\n", status, bytesTransferred);
     
     // We can cast the variable like this regardless of the actual descriptor type
     // since both descriptors get transferred the same way and they both provide the
@@ -233,8 +275,8 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
     // If the descriptor is smaller than 4K we'll get it in one shot
     // It might actually be 4K - StandardUSB::kDescriptorSize but
     // only Redmond might be able to explain this to us.
-    uint16_t transferSize = USBToHost16(header->dwLength);
-    if (transferSize <= 0x1000) {
+    uint16_t descriptorSize = USBToHost16(header->dwLength);
+    if (descriptorSize <= 0x1000) {
         *dataBuffer = IOMalloc(header->dwLength);
         if (*dataBuffer == NULL) {
             log("VM Error.\n");
@@ -243,7 +285,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
         
         request.bRequest      = cookie;
         request.wValue        = interfaceNumber;
-        request.wLength       = HostToUSB16(transferSize);
+        request.wLength       = HostToUSB16(descriptorSize);
         request.wIndex        = DescriptorType;
         //If requesting for an interface, we have a different bmRequestType
         if (interfaceNumber > 0) {
@@ -255,9 +297,9 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
         log("Making the 2nd request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
 #endif
         
-        status = device->deviceRequest(this, request, *dataBuffer, bytesTransfered, kUSBHostVendorRequestCompletionTimeout);
+        status = device->deviceRequest(this, request, *dataBuffer, bytesTransferred, kUSBHostVendorRequestCompletionTimeout);
         if(status){
-            log("Request failed: %x, %x bytes transfered\n", status, bytesTransfered);
+            log("Request failed: %x, %x bytes transfered\n", status, bytesTransferred);
             header = NULL;
             IOFree(interimDataBuffer, 0x10);
             return status;
@@ -269,7 +311,6 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
             log_cont("0x%0x ", (*(uint8_t**)dataBuffer)[i]);
         }
         log_cont("\n");
-        IOSleep(10000);
         
         header = NULL;
         IOFree(interimDataBuffer, 0x10);
@@ -314,7 +355,7 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
             // TODO: Should we transfer everything after the header or do the later pages exclude the header?
             //
             if (status==kIOReturnSuccess){
-              memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
+                memcpy(tempBuffer, iterator+sizeof(StandardUSB::Descriptor), bytesTransferred-sizeof(StandardUSB::Descriptor));
             }
             remainingBytes -= (bytesTransferred-sizeof(StandardUSB::Descriptor));
         }
