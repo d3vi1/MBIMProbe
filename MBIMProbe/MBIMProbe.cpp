@@ -50,6 +50,20 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     configNumber = discoverDevice(device);
     log("Device is now at config %x\n", configNumber);
     
+    bool setStatus = device->setProperty("Preferred Configuration", OSNumber::withNumber(configNumber, 8));
+    if(setStatus){
+        log("Set pref config OK\n");
+        OSNumber *prefConfig = (OSNumber *) device->getProperty("Preferred Configuration");
+        if(prefConfig){
+            log("Pref config %x\n", prefConfig->unsigned32BitValue());
+        }else{
+            log("No pref config\n");
+        }
+    } else {
+        log("set pref config NOK\n");
+    }
+    
+    
     device->close(this);
     return this;
     
@@ -192,7 +206,7 @@ IOReturn MBIMProbe::checkMsOsDescriptor(IOUSBHostDevice *device, uint8_t *cookie
 
 
 IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie, uint16_t interfaceNumber, const uint16_t DescriptorType, void **dataBuffer, uint32_t *dataBufferSize){
-
+    
     // First input validation:
     // We can only request COMPATID descriptor device-wide
     if (interfaceNumber > 0 && DescriptorType == MS_OS_10_REQUEST_EXTENDED_COMPATID){
@@ -206,9 +220,9 @@ IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie
         log("Unknown Microsoft Descriptor: %00000x\n", DescriptorType);
         return kIOReturnBadArgument;
     }
-
+    
     DeviceRequest request;
-
+    
     *dataBuffer = IOMalloc(0x28);
     *dataBufferSize = 0x28;
     request.bmRequestType = 0xC0;
@@ -216,8 +230,8 @@ IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie
     request.wIndex = DescriptorType;
     request.wValue = interfaceNumber;
     request.wLength = 0x28;
-
-
+    
+    
 #ifdef DEBUG
     log("Making the request: bRequest: %x, wIndex: %x, bmRequestType: %x, wValue: %x, wLength: %x\n", request.bRequest, request.wIndex, request.bmRequestType, request.wValue, request.wLength);
 #endif
@@ -231,7 +245,7 @@ IOReturn MBIMProbe::getSmallMsDescriptor(IOUSBHostDevice *device, uint8_t cookie
         log_cont("0x%0x ", *( ( (uint8_t*) *dataBuffer) + i) );
     }
     log_cont("\n");
-
+    
     return status;
 }
 
@@ -392,7 +406,6 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
 
 
 uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
-    
     const IOUSBDeviceDescriptor *device_descriptor = (IOUSBDeviceDescriptor *) device->getDeviceDescriptor();
     IOLog("-%s[%p]::%s @0 \n", getName(), this, __FUNCTION__);
     
@@ -403,7 +416,7 @@ uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
         log("@1a currentConfig %x\n", currentConfig);
         
         const ConfigurationDescriptor *config = device->getConfigurationDescriptor(j);
-//        const IOUSBConfigurationDescriptor *usb_config = (IOUSBConfigurationDescriptor*) config;
+        //        const IOUSBConfigurationDescriptor *usb_config = (IOUSBConfigurationDescriptor*) config;
         
         currentConfig = discoverDevice(device);
         log("@1b currentConfig %x\n", currentConfig);
