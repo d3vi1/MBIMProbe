@@ -50,13 +50,10 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     configNumber = discoverDevice(device);
     log("Device is now at config %x\n", configNumber);
     
-    IORegistryEntry * ioregParent = device->getParentEntry(usbPlane);
-    
-    
-    bool setStatus = ioregParent->setProperty("Preferred Configuration", OSNumber::withNumber(configNumber, 8));
+    bool setStatus = device->setProperty(kUSBPreferredConfiguration, OSNumber::withNumber(configNumber, 8));
     if(setStatus){
         log("Set pref config OK\n");
-        OSNumber *prefConfig = (OSNumber *) ioregParent->getProperty("Preferred Configuration");
+        OSNumber *prefConfig = (OSNumber *) device->getProperty(kUSBPreferredConfiguration);
         if(prefConfig){
             log("Pref config %x\n", prefConfig->unsigned32BitValue());
         }else{
@@ -428,7 +425,7 @@ uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
             IOLog("-%s[%p]::%s Could not get getConfigurationDescriptor: %x\n", getName(), this, __FUNCTION__, j);
             continue;
         }
-        IOLog("-%s[%p]::%s @2: at configuration %x\n", getName(), this, __FUNCTION__, j);
+        IOLog("-%s[%p]::%s @2: at configuration %x\n", getName(), this, __FUNCTION__, config->bConfigurationValue);
         
         const InterfaceDescriptor *interface_descriptor;
         do {
@@ -437,7 +434,7 @@ uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
                 IOLog("-%s[%p]::%s @3 got an iface descriptor class %x subclass %x\n", getName(), this, __FUNCTION__, interface_descriptor->bInterfaceClass, interface_descriptor->bInterfaceSubClass);
                 if(interface_descriptor->bInterfaceClass == 2 && interface_descriptor->bInterfaceSubClass == 0x0e) {
                     // found MBIM configuration
-                    return config->bConfigurationValue;;
+                    return config->bConfigurationValue;
                 }
             }
         } while(interface_descriptor != NULL);
