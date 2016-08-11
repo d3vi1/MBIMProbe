@@ -50,10 +50,13 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     configNumber = discoverDevice(device);
     log("Device is now at config %x\n", configNumber);
     
-    bool setStatus = device->setProperty("Preferred Configuration", OSNumber::withNumber(configNumber, 8));
+    IORegistryEntry * ioregParent = device->getParentEntry(usbPlane);
+    
+    
+    bool setStatus = ioregParent->setProperty("Preferred Configuration", OSNumber::withNumber(configNumber, 8));
     if(setStatus){
         log("Set pref config OK\n");
-        OSNumber *prefConfig = (OSNumber *) device->getProperty("Preferred Configuration");
+        OSNumber *prefConfig = (OSNumber *) ioregParent->getProperty("Preferred Configuration");
         if(prefConfig){
             log("Pref config %x\n", prefConfig->unsigned32BitValue());
         }else{
