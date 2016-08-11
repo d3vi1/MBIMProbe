@@ -376,6 +376,38 @@ IOReturn MBIMProbe::getMsDescriptor(IOUSBHostDevice *device, const uint8_t cooki
     
 }
 
+//
+//uint8_t MBIMProbe::findMBIMBConfig(IOUSBHostDevice *device){
+//    
+//    const IOUSBDeviceDescriptor *device_descriptor = (IOUSBDeviceDescriptor *) device->getDeviceDescriptor();
+//    IOLog("-%s[%p]::%s @0 \n", getName(), this, __FUNCTION__);
+//    
+//    for(int j = 0; j < device_descriptor->bNumConfigurations; j++){
+//        IOLog("-%s[%p]::%s @1 \n", getName(), this, __FUNCTION__);
+//        const ConfigurationDescriptor *config = device->getConfigurationDescriptor(j);
+//        const IOUSBConfigurationDescriptor *usb_config = (IOUSBConfigurationDescriptor*) config;
+//        
+//        if(config == NULL){
+//            IOLog("-%s[%p]::%s Could not get getConfigurationDescriptor: %x\n", getName(), this, __FUNCTION__, j);
+//            continue;
+//        }
+//        IOLog("-%s[%p]::%s @2: at configuration %x\n", getName(), this, __FUNCTION__, j);
+//        
+//        const InterfaceDescriptor *interface_descriptor;
+//        do {
+//            interface_descriptor = getNextInterfaceDescriptor(config, interface_descriptor);
+//            if(interface_descriptor != NULL) {
+//                IOLog("-%s[%p]::%s @3 got an iface descriptor class %x subclass %x\n", getName(), this, __FUNCTION__, interface_descriptor->bInterfaceClass, interface_descriptor->bInterfaceSubClass);
+//                if(interface_descriptor->bInterfaceClass == 2 && interface_descriptor->bInterfaceSubClass == 0x0e) {
+//                    // found MBIM configuration
+//                    return config->bConfigurationValue;;
+//                }
+//            }
+//        } while(interface_descriptor != NULL);
+//    }
+//    return NULL;
+//}
+//
 
 
 
