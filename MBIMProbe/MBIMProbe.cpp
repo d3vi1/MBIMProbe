@@ -21,7 +21,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     const IORegistryPlane * usbPlane = getPlane(kIOUSBPlane);
     IOUSBHostDevice       * device   = OSDynamicCast(IOUSBHostDevice, provider);
     IOReturn                status;
-    uint8_t configNumber  = 0;
     
     if(!(device && usbPlane)){
         return 0;
@@ -35,10 +34,7 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         return 0;
     }
     
-    
-    
-    discoverDevice(device, &configNumber);
-    
+    uint8_t configNumber  = discoverDevice(device);
     
     /*
      * PRE:  There is a MSFT100 descriptor on device.
@@ -97,21 +93,23 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     
 }
 
-void MBIMProbe::discoverDevice(IOUSBHostDevice *device, uint8_t *configNumber) {
+uint8_t MBIMProbe::discoverDevice(IOUSBHostDevice *device) {
     //Let's find out a few things about this device.
     //First: The number of configurations
+    uint8_t configNumber;
     StandardUSB::DeviceRequest request;
     request.bmRequestType = makeDeviceRequestbmRequestType(kRequestDirectionIn, kRequestTypeStandard, kRequestRecipientDevice);
     request.bRequest      = kDeviceRequestGetConfiguration;
     request.wValue        = 0;
     request.wIndex        = 0;
-    request.wLength       = sizeof(*configNumber);
+    request.wLength       = sizeof(configNumber);
     uint32_t bytesTransferred = 0;
-    device->deviceRequest(this, request, configNumber, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
+    device->deviceRequest(this, request, &configNumber, bytesTransferred, kUSBHostStandardRequestCompletionTimeout);
     //And then, the idVendor, idProduct, etc.
 #ifdef DEBUG
-    log("We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), *configNumber);
+    log("We have the USB device exclusively. Vendor ID: %x. Product ID: %x. Config: %d. Now checking for the MSFT100 descriptor\n", USBToHost16(device->getDeviceDescriptor()->idVendor), USBToHost16(device->getDeviceDescriptor()->idProduct), configNumber);
 #endif
+    return configNumber;
 }
 
 

@@ -33,7 +33,7 @@ class MBIMProbe : public IOService
     OSDeclareDefaultStructors(MBIMProbe)
 
 private:
-    virtual void        discoverDevice               (IOUSBHostDevice *device, uint8_t *configNumber);
+    virtual uint8_t     discoverDevice               (IOUSBHostDevice *device);
     virtual IOReturn    checkMsOsDescriptor          (IOUSBHostDevice *device,
                                                       uint8_t *cookie);
     virtual IOReturn    getMsDescriptor              (IOUSBHostDevice *device,
