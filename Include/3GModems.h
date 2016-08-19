@@ -6,8 +6,8 @@
 //  Copyright © 2016 Răzvan Corneliu C.R. VILT. All rights reserved.
 //
 
-#ifndef _GModems_h
-#define _GModems_h
+#ifndef _3GModems_h
+#define _3GModems_h
 
 /*
  In the drivers included by Vodafone, these are all the included vendor IDs. Did you notice that
@@ -59,4 +59,4 @@
 #define USB_VENDOR_ID_ZTE_19D2      6610
 #define USB_VENDOR_ID_QUALCOMM_05C6 1478
 
-#endif /* _GModems_h */
+#endif /* _3GModems_h */

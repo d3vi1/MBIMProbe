@@ -29,7 +29,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
         return 0;
     }
     
-    
     //Get exclusive access to the USB device
     bool openSucc = device->open(this);
     if(!openSucc){
@@ -64,8 +63,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     }
     
     
-    device->close(this);
-    return this;
     
     /*
      * PRE:  There is a MSFT100 descriptor on device.
@@ -101,7 +98,6 @@ IOService * MBIMProbe::probe(IOService *provider, SInt32 *score){
     
     log("We succeeded in getting MS_OS_10_REQUEST_EXTENDED_COMPATID\n");
     // FIXME this shouldn't return here, but it does because of a segfault down below
-    return 0;
     
     configNumber = parseMSDescriptor(dataBuffer, configNumber);
     IOFree(dataBuffer, dataBufferSize);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0800"
+   LastUpgradeVersion = "0730"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
-               BuildableName = "MBIMProbe.kext"
-               BlueprintName = "MBIMProbe-10.11"
-               ReferencedContainer = "container:MBIMProbe.xcodeproj">
+               BlueprintIdentifier = "E5BA42E51D66E981006AF145"
+               BuildableName = "HuaweiProbe.kext"
+               BlueprintName = "HuaweiProbe-10.11"
+               ReferencedContainer = "container:WWAN Drivers.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,10 +45,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
-            BuildableName = "MBIMProbe.kext"
-            BlueprintName = "MBIMProbe-10.11"
-            ReferencedContainer = "container:MBIMProbe.xcodeproj">
+            BlueprintIdentifier = "E5BA42E51D66E981006AF145"
+            BuildableName = "HuaweiProbe.kext"
+            BlueprintName = "HuaweiProbe-10.11"
+            ReferencedContainer = "container:WWAN Drivers.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -60,6 +60,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "E5BA42E51D66E981006AF145"
+            BuildableName = "HuaweiProbe.kext"
+            BlueprintName = "HuaweiProbe-10.11"
+            ReferencedContainer = "container:WWAN Drivers.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

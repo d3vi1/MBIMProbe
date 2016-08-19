@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E58F6C731C594739005F2279"
+               BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
                BuildableName = "MBIMProbe.kext"
-               BlueprintName = "MBIMProbe-10.5"
-               ReferencedContainer = "container:MBIMProbe.xcodeproj">
+               BlueprintName = "MBIMProbe-10.11"
+               ReferencedContainer = "container:WWAN Drivers.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,10 +45,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E58F6C731C594739005F2279"
+            BlueprintIdentifier = "E5138B0B19113B21004AC1C8"
             BuildableName = "MBIMProbe.kext"
-            BlueprintName = "MBIMProbe-10.5"
-            ReferencedContainer = "container:MBIMProbe.xcodeproj">
+            BlueprintName = "MBIMProbe-10.11"
+            ReferencedContainer = "container:WWAN Drivers.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -60,15 +60,6 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E58F6C731C594739005F2279"
-            BuildableName = "MBIMProbe.kext"
-            BlueprintName = "MBIMProbe-10.5"
-            ReferencedContainer = "container:MBIMProbe.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
